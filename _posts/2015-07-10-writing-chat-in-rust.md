@@ -255,7 +255,7 @@ let server_socket = server_socket.listen(128).unwrap();
 
 event_loop.register_opt(&server_socket,
                         Token(0),
-                        Interest::readable(),
+                        EventSet::readable(),
                         PollOpt::edge()).unwrap();
 {% endhighlight %}
 
@@ -297,14 +297,14 @@ For now we need to register the socket within the event loop:
 {% highlight rust %}
 event_loop.register_opt(&server_socket,
                         Token(0),
-                        Interest::readable(),
+                        EventSet::readable(),
                         PollOpt::edge()).unwrap();
 {% endhighlight %}
 
 Arguments for `register_opt` are slightly more complicated:
 
 * *Token* is a unique identifier for a socket. Somehow we need to distinguish sockets among themselves when an event arrives in the loop, and the token serves as a link between a socket and its generated events. Here we link `Token(0)` with the listening socket.
-* *Interest* describes our intent for the events subscription: are we waiting for new data to arrive at the socket, for a socket to become available for a write, or for both?
+* *EventSet* describes our intent for the events subscription: are we waiting for new data to arrive at the socket, for a socket to become available for a write, or for both?
 * *PollOpt* are options for the subscription. `PollOpt::edge()` means that we prefer *edge-triggered* events to *level-triggered*.  
 <br/>The difference between two can be put this way: the level-triggered subscription notifies when a socket buffer has some data available to read, while the edge-triggered notifies only when new data has arrived to a socket. I.e., in case of edge-triggered notifications, if we haven't read all data available in the socket, we won't get new notifications until some *new* data will arrive. With level-triggered events we'll be getting new notifications as long as there's some data to read in the socket's buffer. You can refer to [StackOverflow answers](http://stackoverflow.com/questions/1966863/level-vs-edge-trigger-network-event-mechanisms) to get more details.
 
@@ -343,8 +343,8 @@ impl Handler for WebSocketServer {
     type Timeout = usize;
     type Message = ();
 
-    fn readable(&mut self, event_loop: &mut EventLoop<WebSocketServer>,
-                token: Token, hint: ReadHint)
+    fn ready(&mut self, event_loop: &mut EventLoop<WebSocketServer>,
+             token: Token, events: EventSet)
     {
         match token {
             SERVER_TOKEN => {
@@ -362,7 +362,7 @@ impl Handler for WebSocketServer {
 
                 self.clients.insert(new_token, client_socket);
                 event_loop.register_opt(&self.clients[&new_token],
-                                        new_token, Interest::readable(),
+                                        new_token, EventSet::readable(),
                                         PollOpt::edge() | PollOpt::oneshot()).unwrap();
             }
         }
@@ -394,16 +394,16 @@ Next, the `Handler` trait from `mio` becomes useful again:
 impl Handler for WebSocketServer
 {% endhighlight %}
 
-Here we need to *override* a callback function `readable` within the trait implementation. Overriding means that the `Handler` trait already contains a dummy `readable` implementation (besides other default stubs for several callback functions as well). It does nothing useful, so we need to write our own version to handle read events:
+Here we need to *override* a callback function `ready` within the trait implementation. Overriding means that the `Handler` trait already contains a dummy `ready` implementation (besides other default stubs for several callback functions as well). It does nothing useful, so we need to write our own version to handle events:
 
 {% highlight rust %}
-fn readable(&mut self, event_loop: &mut EventLoop<WebSocketServer>,
-            token: Token, hint: ReadHint)
+fn ready(&mut self, event_loop: &mut EventLoop<WebSocketServer>,
+         token: Token, events: EventSet)
 {% endhighlight %}
 
-This function gets called each time a socket becomes available for a read, and we're provided with some useful info about the event through the call arguments: the event loop instance, the token linked to the event source (socket), and a *hint*&nbsp;&mdash;&nbsp;a set of flags that provide further details about the occurred event, as it could be not a read, but a signal that connection has been closed, for example.
+This function gets called each time a socket becomes available for a read or write (depending on our subscription), and we're provided with some useful info about the event through the call arguments: the event loop instance, the token linked to the event source (socket), and `events`, a set of flags that provide details about the occurred event that could be either *readable* or *writable*.
 
-The listening socket generate *read* events when a new client arrives into the acception queue and when we're ready to connect with it. And that's what we do next, but first we need to make sure that the event has sourced from the listening socket by doing *[pattern matching](https://doc.rust-lang.org/book/match.html)* on a token:
+The listening socket generate *readable* events when a new client arrives into the acception queue and when we're ready to connect with it. And that's what we do next, but first we need to make sure that the event has sourced from the listening socket by doing *[pattern matching](https://doc.rust-lang.org/book/match.html)* on a token:
 
 {% highlight rust %}
 match token {
@@ -482,11 +482,11 @@ And finally we should subscribe to events from the newly accepted client's socke
 
 {% highlight rust %}
 event_loop.register_opt(&self.clients[&new_token],
-                        new_token, Interest::readable(),
+                        new_token, EventSet::readable(),
                         PollOpt::edge() | PollOpt::oneshot()).unwrap();
 {% endhighlight %}
 
-You might have noticed another difference in the provided arguments: there is a `PollOpt::oneshot()` option along with the familiar `PollOpt::edge()`. It tells that we want the triggered event to temporarily unregister from the event loop. It helps us make the code more simple and straightforward because in the other case we would have needed to track the current state of a particular socket&nbsp;&mdash;&nbsp;i.e., maintain flags that we can write or read now, etc. Instead, we just simply reregister the event with a desired interest whenever it has been triggered.
+You might have noticed another difference in the provided arguments: there is a `PollOpt::oneshot()` option along with the familiar `PollOpt::edge()`. It tells that we want the triggered event to temporarily unregister from the event loop. It helps us make the code more simple and straightforward because in the other case we would have needed to track the current state of a particular socket&nbsp;&mdash;&nbsp;i.e., maintain flags that we can write or read now, etc. Instead, we just simply reregister the event with a desired event set whenever it has been triggered.
 
 Oh, and besides that, now that we've got more detailed `WebSocketServer` struct we must modify the event loop registration code in the main function a bit. Modifications mostly concern the struct initialization and are pretty simple:
 
@@ -499,7 +499,7 @@ let mut server = WebSocketServer {
 
 event_loop.register_opt(&server.socket,
                         SERVER_TOKEN,
-                        Interest::readable(),
+                        EventSet::readable(),
                         PollOpt::edge()).unwrap();
 
 event_loop.run(&mut server).unwrap();
@@ -562,21 +562,21 @@ impl WebSocketClient {
 }
 {% endhighlight %}
 
-And we have some changes in the `WebSocketServer`'s `readable` function:
+And we have some changes in the `WebSocketServer`'s `ready` function:
 
 {% highlight rust %}
 match token {
     SERVER_TOKEN => {
         ...
         self.clients.insert(new_token, WebSocketClient::new(client_socket));
-        event_loop.register_opt(&self.clients[&new_token].socket, new_token, Interest::readable(),
+        event_loop.register_opt(&self.clients[&new_token].socket, new_token, EventSet::readable(),
                                 PollOpt::edge() | PollOpt::oneshot()).unwrap();
         ...
     },
     token => {
         let mut client = self.clients.get_mut(&token).unwrap();
         client.read();
-        event_loop.reregister(&client.socket, token, Interest::readable(),
+        event_loop.reregister(&client.socket, token, EventSet::readable(),
                               PollOpt::edge() | PollOpt::oneshot()).unwrap();
     }
 }
@@ -607,7 +607,7 @@ struct WebSocketClient {
 
 This struct will effectively replace the `HashMap<Token, TcpStream>` declaration with `HashMap<Token, WebSocketClient>`, so we've added the client's socket to the state as well.
 
-Also, we can use the same `WebSocketClient` to hold code to manage data coming from a client. It'd be too inconvenient to put all the code in the `handle_read` &mdash; the function would quickly become messy and unreadable. So we're just adding a separate handler function:
+Also, we can use the same `WebSocketClient` to hold code to manage data coming from a client. It'd be too inconvenient to put all the code in the `ready` function &mdash; it would quickly become messy and unreadable. So we're just adding a separate handler that will manage each client:
 
 {% highlight rust %}
 impl WebSocketClient {
@@ -709,7 +709,7 @@ match token {
     token => {
         let mut client = self.clients.get_mut(&token).unwrap();
         client.read();
-        event_loop.reregister(&client.socket, token, Interest::readable(),
+        event_loop.reregister(&client.socket, token, EventSet::readable(),
                               PollOpt::edge() | PollOpt::oneshot()).unwrap();
     }
 }
@@ -732,7 +732,7 @@ client.read();
 In the end, we've got to reregister the client, because of `oneshot()`:
 
 {% highlight rust %}
-event_loop.reregister(&client.socket, token, Interest::readable(),
+event_loop.reregister(&client.socket, token, EventSet::readable(),
                       PollOpt::edge() | PollOpt::oneshot()).unwrap();
 {% endhighlight %}
 
@@ -881,15 +881,15 @@ Now `WebSocketClient` can get access to parsed headers, and, consequently, we ca
 
 But as we can't just send the data in the non-blocking environment, we need to switch the event loop to notify us when a client's socket becomes available for a write.
 
-The solution is to switch our interest to `Interest::writable()` when we reregister the client's socket.  
+The solution is to switch our event set to `EventSet::writable()` when we reregister the client's socket.  
 Remember this line?
 
 {% highlight rust %}
-event_loop.reregister(&client.socket, token, Interest::readable(),
+event_loop.reregister(&client.socket, token, EventSet::readable(),
                       PollOpt::edge() | PollOpt::oneshot()).unwrap();
 {% endhighlight %}
 
-We just need to store our interest with the other client's state, so let's rewrite it this way:
+We just need to store the set of events that interests us with the other client's state, so let's rewrite it this way:
 
 {% highlight rust %}
 struct WebSocketClient {
@@ -898,7 +898,7 @@ struct WebSocketClient {
     headers: Rc<RefCell<HashMap<String, String>>>,
 
     // Adding a new `interest` property:
-    interest: Interest
+    interest: EventSet
 }
 {% endhighlight %}
 
@@ -932,7 +932,7 @@ struct WebSocketClient {
     socket: TcpStream,
     http_parser: Parser<HttpParser>,
     headers: Rc<RefCell<HashMap<String, String>>>,
-    interest: Interest,
+    interest: EventSet,
 
     // Add a client state:
     state: ClientState
@@ -949,8 +949,8 @@ impl WebSocketClient {
         WebSocketClient {
             socket: socket,
             ...
-            // Initial interest
-            interest: Interest::readable(),
+            // Initial events that interest us
+            interest: EventSet::readable(),
 
             // Initial state
             state: ClientState::AwaitingHandshake
@@ -981,32 +981,42 @@ if self.http_parser.is_upgrade() {
     self.state = ClientState::HandshakeResponse;
 
     // Change current interest to `Writable`
-    self.interest.remove(Interest::readable());
-    self.interest.insert(Interest::writable());
+    self.interest.remove(EventSet::readable());
+    self.interest.insert(EventSet::writable());
 
     break;
 }
 {% endhighlight %}
 
 After we've changed our interest to `Writable`, let's add the required routines to reply to the handshake.
-We will create a function in our `WebSocketServer` handler implementation, `writable`. It's almost identical to `readable`, the only obvious difference being that `writable` is called whenever the client's socket is available for a write:
+
+We'll modify the `ready` function in our `WebSocketServer` handler implementation. The writing handler itself is simple, and we only need to separate incoming events.
 
 {% highlight rust %}
-fn writable(&mut self, event_loop: &mut EventLoop<WebSocketServer>, token: Token) {
-    match token {
-        token => {
-            let mut client = self.clients.get_mut(&token).unwrap();
-            client.write();
-            event_loop.reregister(&client.socket, token, client.interest,
-                                  PollOpt::edge() | PollOpt::oneshot()).unwrap();
+fn ready(&mut self, event_loop: &mut EventLoop<WebSocketServer>,
+         token: Token, events: EventSet) {
+    // Are we dealing with the read event?
+    if events.is_readable() {
+        // Move all read handling code here
+        match token {
+            SERVER_TOKEN => { ... },
+            ...
         }
+        ...
+    }
+
+    // Handle write events that are generated whenever
+    // the socket becomes available for a write operation:
+    if events.is_writable()
+        let mut client = self.clients.get_mut(&token).unwrap();
+        client.write();
+        event_loop.reregister(&client.socket, token, client.interest,
+                              PollOpt::edge() | PollOpt::oneshot()).unwrap();
     }
 }
 {% endhighlight %}
 
-If it's not straightforward enough, try to compare it to `readable` from the [8th section](#accepting-connections).
-
-The remaining part is most simple, we need to build and send the response string:
+The remaining part is most simple&nbsp;&mdash;&nbsp;we need to build and send the response string:
 
 {% highlight rust %}
 use std::fmt;
@@ -1035,8 +1045,8 @@ impl WebSocketClient {
         self.state = ClientState::Connected;
 
         // And change the interest back to `readable()`:
-        self.interest.remove(Interest::writable());
-        self.interest.insert(Interest::readable());
+        self.interest.remove(EventSet::writable());
+        self.interest.insert(EventSet::readable());
     }
 }
 {% endhighlight %}
