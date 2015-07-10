@@ -53,7 +53,7 @@ let foo = vec![1, 2, 3];
 // We've created a new vector containing elements 1, 2, 3 and
 // bound it to the local variable `foo`.
 
-let bar = variable2;
+let bar = foo;
 // Now we've handled ownership of the object to the variable `bar`.
 // `foo` can't be accessed further, because it has no binding now.
 {% endhighlight %}
