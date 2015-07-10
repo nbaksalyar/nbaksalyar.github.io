@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>{% if page.title %}{{page.title}}{% else %}Nikita Baksalyar{% endif %}</title>
+		<link rel="stylesheet" type="text/css" href="/static/style.css" />
+		{% for css_name in page.extra_css %}
+		<link rel="stylesheet" type="text/css" href="/static/{{css_name}}" />
+		{% endfor %}
+		<meta charset="utf-8" />
+	</head>
+	<body>
+		<article>
+			{{ content }}
+		</article>
+
+		<nav>
+			<ul>
+				{% if page.previous.url %} 
+				<li>&larr; <a href="{{page.previous.url}}">{{page.previous.title}}</a> &bull;</li>
+				{% endif %} 
+
+				{% if page.next.url %} 
+				<li> &bull; <a href="{{page.next.url}}">{{page.next.title}}</a> &rarr;</li>
+				{% endif %} 
+			</ul>
+		</nav>
+
+		<footer>
+			<p>
+				<a href="/">Index</a> |
+				<a href="/feed.xml">RSS</a> |
+				<a href="mailto:nikita.baksalyar@gmail.com">nikita.baksalyar@gmail.com</a> |
+				<a href="https://twitter.com/nbaksalyar">@nbaksalyar</a> |
+				<a href="https://github.com/nbaksalyar">GitHub</a>
+			</p>
+		</footer>
+
+		{% for script in page.extra_js %}
+		<script type="text/javascript" src="/static/{{script}}"></script>
+		{% endfor %}
+
+		<script>
+		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+		ga('create', 'UA-64972143-1', 'auto');
+		ga('send', 'pageview');
+		</script>
+	</body>
+</html>
