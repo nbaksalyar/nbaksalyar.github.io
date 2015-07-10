@@ -1063,7 +1063,7 @@ But before we get to the app, we might do further refactoring, separating the li
 
 All current code is available on [GitHub](https://github.com/nbaksalyar/rust-chat)&nbsp;&mdash;&nbsp;feel free to fork it and play with it at your own discretion.
 
-I suggest you to subscribe to the blog in [RSS](/feed.xml) or on [Twitter](https://twitter.com/nbaksalyar) if you'd like to follow the updates.
+I suggest you to subscribe to the blog in [RSS](http://feeds.feedburner.com/NikitaBaksalyar) or on [Twitter](https://twitter.com/nbaksalyar) if you'd like to follow the updates.
 
 See you soon!
 
