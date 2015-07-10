@@ -1082,6 +1082,22 @@ See you soon!
 * [Journey to the Stack](http://duartes.org/gustavo/blog/post/journey-to-the-stack/) by Gustavo Duarte&nbsp;&mdash;&nbsp;a series of articles that provides a good insight on the inner implementation of the stack and stack frames. It'll help you to better understand the Rust memory management principles.
 * [The Linux Programming Interface](http://man7.org/tlpi/) by Michael Kerrisk, 2010&nbsp;&mdash;&nbsp;awesome book on the topic of using system APIs. Despite the title, applicable not only to Linux but to most *nix systems as well.
 
+## Comments
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'nbaksalyar';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
 ## References
 
 <a name="n1"></a>
