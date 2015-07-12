@@ -543,7 +543,7 @@ impl WebSocketClient {
                     // Socket buffer has got no more bytes.
                     break,
                 Ok(Some(len)) => {
-                    self.http_parser.parse(&buf);
+                    self.http_parser.parse(&buf[0..len]);
                     if self.http_parser.is_upgrade() {
                         // ...
                         break;
@@ -664,7 +664,7 @@ And, finally, here's the case when the `try_read` has written bytes to the buffe
 match self.socket.try_read(&mut buf) {
     ...
     Ok(Some(len)) => {
-        self.http_parser.parse(&buf);
+        self.http_parser.parse(&buf[0..len]);
 
         if self.http_parser.is_upgrade() {
             // ...
@@ -674,7 +674,7 @@ match self.socket.try_read(&mut buf) {
 }
 {% endhighlight %}
 
-Here we're providing the data to the parser, and then check if we have a request to "upgrade" the connection (which means that a user has provided the `Connection: Upgrade` header).
+Here we're providing a slice of the data to the parser, and then check if we have a request to "upgrade" the connection (which means that a user has provided the `Connection: Upgrade` header).
 
 The final part is the `new` method to conveniently create new `WebSocketClient` instances:
 
