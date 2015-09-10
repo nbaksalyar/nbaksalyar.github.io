@@ -60,9 +60,9 @@ let bar = foo;
 
 And, because values bind to exactly one place, resources that they hold (memory, file handles, sockets, etc.) can be automatically freed when the variable goes out of a scope (defined by code blocks within curly braces, `{` and `}`).
 
-This may sound unnecessarily complicated, but, if you think about it, this concept is very pragmatic. Essentially, it's the Rust's killer feature&nbsp;&mdash;&nbsp;these restrictions provide the memory safety that makes Rust feel like a convenient high-level language, while at the same time it retains the efficiency of pure C/C++ code.
+This may sound unnecessarily complicated, but, if you think about it, this concept is very pragmatic. Essentially, it's Rust's killer feature&nbsp;&mdash;&nbsp;these restrictions provide the memory safety that makes Rust feel like a convenient high-level language, while at the same time it retains the efficiency of pure C/C++ code.
 
-Despite all these interesting features, until recently Rust has had some significant disadvantages such as an unstable API, but the long way of almost 10 years<sup>[[5]](#n5)</sup> to the stable version 1.0 has finally come to an end, and the language has matured to the point when we're finally ready to put it into a practical usage.
+Despite all these interesting features, until recently Rust has had some significant disadvantages such as an unstable API, but after almost 10 years<sup>[[5]](#n5)</sup> the stable version 1.0 has finally landed, and the language has matured to the point when we're finally ready to put it into a practical usage.
 
 ## 2 Goals
 
@@ -78,7 +78,7 @@ But before we'll start writing the actual code, we need to take a detour to unde
 
 To function properly, our service needs to send and receive data through the network sockets.
 
-It may sound simple of a task, but there are several ways of varying complexity to handle the input and output operations efficiently. The major difference between the approaches lies in the treatment of blocking: the default is to prevent all CPU operations while we're waiting for data to arrive to a network socket.
+It may sound like a simple task, but there are several ways of varying complexity to handle the input and output operations efficiently. The major difference between the approaches lies in the treatment of blocking: the default is to prevent all CPU operations while we're waiting for data to arrive to a network socket.
 
 Since we can't allow one user of our chat service to block others, we need to isolate them somehow.
 
@@ -253,10 +253,10 @@ server_socket.bind(&address).unwrap();
 
 let server_socket = server_socket.listen(128).unwrap();
 
-event_loop.register_opt(&server_socket,
-                        Token(0),
-                        EventSet::readable(),
-                        PollOpt::edge()).unwrap();
+event_loop.register(&server_socket,
+                    Token(0),
+                    EventSet::readable(),
+                    PollOpt::edge()).unwrap();
 {% endhighlight %}
 
 And let's go over it, line by line.
@@ -267,7 +267,7 @@ First we need to add TCP namespace import to the top of the `main.rs` file:
 use mio::tcp::*;
 {% endhighlight %}
 
-Create an IPv4 streaming (TCP) socket: 
+Create an IPv4 streaming (TCP) socket:
 
 {% highlight rust %}
 let server_socket = TcpSocket::v4().unwrap();
@@ -295,13 +295,13 @@ Also, you might be wondering why we call `unwrap` almost on every line&nbsp;&mda
 For now we need to register the socket within the event loop:
 
 {% highlight rust %}
-event_loop.register_opt(&server_socket,
-                        Token(0),
-                        EventSet::readable(),
-                        PollOpt::edge()).unwrap();
+event_loop.register(&server_socket,
+                    Token(0),
+                    EventSet::readable(),
+                    PollOpt::edge()).unwrap();
 {% endhighlight %}
 
-Arguments for `register_opt` are slightly more complicated:
+Arguments for `register` are slightly more complicated:
 
 * *Token* is a unique identifier for a socket. Somehow we need to distinguish sockets among themselves when an event arrives in the loop, and the token serves as a link between a socket and its generated events. Here we link `Token(0)` with the listening socket.
 * *EventSet* describes our intent for the events subscription: are we waiting for new data to arrive at the socket, for a socket to become available for a write, or for both?
@@ -353,7 +353,7 @@ impl Handler for WebSocketServer {
                         println!("Accept error: {}", e);
                         return;
                     },
-                    Ok(None) => panic!("Accept has returned 'None'"),
+                    Ok(None) => unreachable!("Accept has returned 'None'"),
                     Ok(Some(sock)) => sock
                 };
 
@@ -361,7 +361,7 @@ impl Handler for WebSocketServer {
                 let new_token = Token(self.token_counter);
 
                 self.clients.insert(new_token, client_socket);
-                event_loop.register_opt(&self.clients[&new_token],
+                event_loop.register(&self.clients[&new_token],
                                         new_token, EventSet::readable(),
                                         PollOpt::edge() | PollOpt::oneshot()).unwrap();
             }
@@ -436,7 +436,7 @@ let client_socket = match self.socket.accept() {
 };
 {% endhighlight %}
 
-Here we're doing the matching again, now over an outcome of the `accept()` function call that returns the result typed as `Result<Option<TcpStream>>`. *`Result`* is a special type fundamental to errors handling in Rust. It wraps around uncertain results such as errors, timeouts, etc., and we might decide what to do with them in each individual case.
+Here we're doing the matching again, now over an outcome of the `accept()` function call that returns the result typed as `Result<Option<TcpStream>>`.  [`Result`](https://doc.rust-lang.org/std/result/index.html) is a special type fundamental to errors handling in Rust. It wraps around uncertain results such as errors, timeouts, etc., and we might decide what to do with them in each individual case.
 
 But we don't have to&nbsp;&mdash;&nbsp;remember that strange `unwrap()` function that we were calling all the time? It has a standard implementation that terminates the program execution in case if the result is an error and returns it unwrapped if it's normal. So basically by using `unwrap` we're telling that we're interested in the immediate result only, and it's OK to shut down the program if an error has happened.
 
@@ -449,7 +449,7 @@ Err(e) => {
 },
 {% endhighlight %}
 
-`Option` is another similar wrapper type that simply denotes that we either have some result or we don't. If we have no result, the type has a value of `None`, and the actual result is wrapped by `Some(value)`. As you might suggest, the type itself can be compared to *null* or *None* values that can be found in many programming languages, but actually `Option` is much safer&nbsp;&mdash;&nbsp;you'll never get the very common `NullReferenceException` error unless you want to, as it works the same way as the `Result` type: when you `unwrap()` the `Option` it shuts down the process if the result is `None`.
+[`Option`](https://doc.rust-lang.org/std/option/index.html) is another similar wrapper type that simply denotes that we either have some result or we don't. If we have no result, the type has a value of `None`, and the actual result is wrapped by `Some(value)`. As you might suggest, the type itself can be compared to *null* or *None* values that can be found in many programming languages, but actually `Option` is much safer&nbsp;&mdash;&nbsp;you'll never get the very common `NullReferenceException` error unless you want to, as it works the same way as the `Result` type: when you `unwrap()` the `Option` it shuts down the process if the result is `None`.
 
 So, let's unwrap the `accept()` return value:
 
@@ -457,7 +457,7 @@ So, let's unwrap the `accept()` return value:
 Ok(None) => unreachable!(),
 {% endhighlight %}
 
-In this case, there's simply no way for the result to be `None`&nbsp;&mdash;&nbsp;`accept()` would return such value only if we'll try to accept a connection on a non-listening socket. But as we're pretty sure that we're dealing with the server socket, it's safe to crash the program if `accept()` has returned an unexpected value.
+In this case, there's simply no way for the result to be `None`&nbsp;&mdash;&nbsp;`accept()` would return such value only if we'll try to accept a connection on a non-listening socket. But as we're pretty sure that we're dealing with the server socket, it's safe to crash the program using [`unreachable!()`](https://doc.rust-lang.org/core/macro.unreachable!.html) if `accept()` has returned an unexpected value.
 
 So we're just continuing to do the matching:
 
@@ -481,7 +481,7 @@ self.token_counter += 1;
 And finally we should subscribe to events from the newly accepted client's socket by registering it within the event loop, in the very same fashion as with registration of the listening server socket, but providing another token & socket this time:
 
 {% highlight rust %}
-event_loop.register_opt(&self.clients[&new_token],
+event_loop.register(&self.clients[&new_token],
                         new_token, EventSet::readable(),
                         PollOpt::edge() | PollOpt::oneshot()).unwrap();
 {% endhighlight %}
@@ -497,7 +497,7 @@ let mut server = WebSocketServer {
     socket: server_socket    // Handling the ownership of the socket to the struct
 };
 
-event_loop.register_opt(&server.socket,
+event_loop.register(&server.socket,
                         SERVER_TOKEN,
                         EventSet::readable(),
                         PollOpt::edge()).unwrap();
@@ -569,7 +569,7 @@ match token {
     SERVER_TOKEN => {
         ...
         self.clients.insert(new_token, WebSocketClient::new(client_socket));
-        event_loop.register_opt(&self.clients[&new_token].socket, new_token, EventSet::readable(),
+        event_loop.register(&self.clients[&new_token].socket, new_token, EventSet::readable(),
                                 PollOpt::edge() | PollOpt::oneshot()).unwrap();
         ...
     },
@@ -736,9 +736,9 @@ event_loop.reregister(&client.socket, token, EventSet::readable(),
                       PollOpt::edge() | PollOpt::oneshot()).unwrap();
 {% endhighlight %}
 
-As you can see, it doesn't differ much from a client registration routine; in essence, we're just calling `reregister` instead of `register_opt`.
+As you can see, it doesn't differ much from a client registration routine; in essence, we're just calling `reregister` instead of `register`.
 
-Now we know about a client's intent to initiate a WebSocket connection, and we should think about how to reply to such requests. 
+Now we know about a client's intent to initiate a WebSocket connection, and we should think about how to reply to such requests.
 
 ## 10 Handshake
 
