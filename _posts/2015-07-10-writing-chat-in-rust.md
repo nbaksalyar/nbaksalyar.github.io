@@ -245,10 +245,11 @@ To start a TCP server that will be accepting WebSocket connections we'll use a s
 Look at the code:
 
 {% highlight rust %}
+use std::net::SocketAddr;
 use mio::tcp::*;
 ...
 let server_socket = TcpSocket::v4().unwrap();
-let address = std::str::FromStr::from_str("0.0.0.0:10000").unwrap();
+let address = "0.0.0.0:10000".parse::<SocketAddr>().unwrap();
 server_socket.bind(&address).unwrap();
 
 let server_socket = server_socket.listen(128).unwrap();
@@ -261,10 +262,11 @@ event_loop.register(&server_socket,
 
 And let's go over it, line by line.
 
-First we need to add TCP namespace import to the top of the `main.rs` file:
+First we need to add TCP namespace and socket address structure imports to the top of the `main.rs` file:
 
 {% highlight rust %}
 use mio::tcp::*;
+use std::net::SocketAddr;
 {% endhighlight %}
 
 Create an IPv4 streaming (TCP) socket:
@@ -276,7 +278,7 @@ let server_socket = TcpSocket::v4().unwrap();
 Parse the string `"0.0.0.0:10000"` to an address structure and bind the socket to it:
 
 {% highlight rust %}
-let address = std::str::FromStr::from_str("0.0.0.0:10000").unwrap();
+let address = "0.0.0.0:10000".parse::<SocketAddr>().unwrap();
 server_socket.bind(&address).unwrap();
 {% endhighlight %}
 
