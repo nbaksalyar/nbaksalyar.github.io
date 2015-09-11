@@ -273,7 +273,7 @@ Create an IPv4 streaming (TCP) socket:
 let server_socket = TcpSocket::v4().unwrap();
 {% endhighlight %}
 
-Parse the string `"localhost:10000"` to an address structure and bind the socket to it:
+Parse the string `"0.0.0.0:10000"` to an address structure and bind the socket to it:
 
 {% highlight rust %}
 let address = std::str::FromStr::from_str("0.0.0.0:10000").unwrap();
