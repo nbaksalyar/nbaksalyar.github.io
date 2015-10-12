@@ -12,6 +12,10 @@ The objective is to learn more about practical usage of the emerging language Ru
 
 Let's begin the journey!
 
+<aside>
+Russian translation is available here: <a href="http://habrahabr.ru/post/268609/">Rust в деталях: пишем масштабируемый чат с нуля, часть 1</a>
+</aside>
+
 <!--more-->
 
 ## Table of Contents
@@ -1009,7 +1013,7 @@ fn ready(&mut self, event_loop: &mut EventLoop<WebSocketServer>,
 
     // Handle write events that are generated whenever
     // the socket becomes available for a write operation:
-    if events.is_writable()
+    if events.is_writable() {
         let mut client = self.clients.get_mut(&token).unwrap();
         client.write();
         event_loop.reregister(&client.socket, token, client.interest,
