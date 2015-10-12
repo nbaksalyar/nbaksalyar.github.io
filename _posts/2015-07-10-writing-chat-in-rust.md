@@ -141,7 +141,7 @@ Now we're ready to put the theory into practice &mdash; let's start with creatin
 
 As you remember, library dependencies are managed by Cargo. It gets libraries from [*crates.io*](https://crates.io), the Rust packages repository, but allows to retrieve dependencies straight from Git repositories as well. This feature can be useful when we need to use the latest version of a library that hasn't been packaged yet.
 
-At the moment of this writing `mio` has a package only for the version 0.3, while v.0.4 has some new useful features and breaking API changes, so for now let's use the bleeding edge version by adding the reference to the library to `Cargo.toml`:
+At the moment of this writing `mio` has a package only for the version 0.4, while v.0.5 has some new useful features and breaking API changes, so for now let's use the bleeding edge version by adding the reference to the library to `Cargo.toml`:
 
 	[dependencies.mio]
 	git = "https://github.com/carllerche/mio"
@@ -244,7 +244,7 @@ As a result, we'll get the terminal with just a blinking cursor. Not too encoura
 
 ## 7 TCP Server
 
-To start a TCP server that will be accepting WebSocket connections we'll use a special struct from the `mio::tcp` namespace, `TcpSocket`, and follow the standard workflow of establishing a server-side TCP socket: binding to an address, listening, and accepting connections.
+To start a TCP server that will be accepting WebSocket connections we'll use a special struct from the `mio::tcp` namespace, `TcpListener`, and follow the standard workflow of establishing a server-side TCP socket: binding to an address, listening, and accepting connections.
 
 Look at the code:
 
@@ -252,11 +252,8 @@ Look at the code:
 use std::net::SocketAddr;
 use mio::tcp::*;
 ...
-let server_socket = TcpSocket::v4().unwrap();
 let address = "0.0.0.0:10000".parse::<SocketAddr>().unwrap();
-server_socket.bind(&address).unwrap();
-
-let server_socket = server_socket.listen(128).unwrap();
+let server_socket = TcpListener::bind(&address).unwrap();
 
 event_loop.register(&server_socket,
                     Token(0),
@@ -273,28 +270,19 @@ use mio::tcp::*;
 use std::net::SocketAddr;
 {% endhighlight %}
 
-Create an IPv4 streaming (TCP) socket:
-
-{% highlight rust %}
-let server_socket = TcpSocket::v4().unwrap();
-{% endhighlight %}
-
 Parse the string `"0.0.0.0:10000"` to an address structure and bind the socket to it:
 
 {% highlight rust %}
 let address = "0.0.0.0:10000".parse::<SocketAddr>().unwrap();
-server_socket.bind(&address).unwrap();
 {% endhighlight %}
 
-Notice how the compiler infers types for us: because `server_socket.bind` expects an argument of the type `SockAddr`, the Rust compiler can figure out the appropriate type of the `address` for itself, so we don't need to clutter the code with explicit types information.
+Notice how the compiler infers types for us: because `TcpListener::bind` expects an argument of the type `SockAddr`, the Rust compiler can figure out the appropriate type of the `address` for itself, so we don't need to clutter the code with explicit types information.
 
-Start listening:
+Bind the address and start listening:
 
 {% highlight rust %}
-server_socket.listen(128).unwrap();
+let server_socket = TcpListener::bind(&address).unwrap();
 {% endhighlight %}
-
-`listen` takes a single parameter: TCP backlog size<sup>[[10]](#n10)</sup>, that is a size of the queue of sockets waiting to be accepted. Both Linux and FreeBSD have a default maximum of 128 queued connections, so we'll just stick to that value.
 
 Also, you might be wondering why we call `unwrap` almost on every line&nbsp;&mdash;&nbsp;we'll get to that soon.
 
