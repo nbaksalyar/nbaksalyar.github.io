@@ -348,7 +348,7 @@ impl Handler for WebSocketServer {
                         return;
                     },
                     Ok(None) => unreachable!("Accept has returned 'None'"),
-                    Ok(Some(sock)) => sock
+                    Ok(Some((sock, addr))) => sock
                 };
 
                 self.token_counter += 1;
@@ -426,7 +426,7 @@ let client_socket = match self.socket.accept() {
         return;
     },
     Ok(None) => unreachable!(),
-    Ok(Some(sock)) => sock
+    Ok(Some((sock, addr))) => sock
 };
 {% endhighlight %}
 
@@ -906,6 +906,7 @@ event_loop.reregister(&client.socket, token,
 
 The only thing left to do is to change the client's interest value at certain places.
 
+<a name="connection-states"></a>
 To make it more straightforward, let's formalize the process of tracking the connection states:
 
 {% highlight rust %}
@@ -1065,7 +1066,7 @@ Whew. That was a whirlwind tour of language features and concepts, but that's ju
 
 But before we get to the app, we might do further refactoring, separating the library code from the application, likely following with eventual publication of the resulting library to *crates.io*.
 
-All current code is available on [GitHub](https://github.com/nbaksalyar/rust-chat)&nbsp;&mdash;&nbsp;feel free to fork it and play with it at your own discretion.
+All current code is available on [GitHub](https://github.com/nbaksalyar/rust-chat/tree/part-1)&nbsp;&mdash;&nbsp;feel free to fork it and play with it at your own discretion.
 
 I suggest you to subscribe to the blog in [RSS](http://feeds.feedburner.com/NikitaBaksalyar) or on [Twitter](https://twitter.com/nbaksalyar) if you'd like to follow the updates.
 
