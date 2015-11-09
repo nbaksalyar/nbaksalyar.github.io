@@ -13,7 +13,11 @@ h2 {
 	font-size: 120%;
 }
 
-h1, h2 {
+h3 {
+	font-size: 110%;
+}
+
+h1, h2, h3 {
 	line-height: 1;
 	font-weight: normal;
 }
@@ -27,6 +31,16 @@ ul > li {
 }
 
 ol > li {
+	margin-bottom: 3px;
+}
+
+ol > li ul {
+	margin: 5px 0px;
+	padding-left: 1em;
+	line-height: 1.4;
+}
+
+ol > li ul > li {
 	margin-bottom: 3px;
 }
 
@@ -102,6 +116,10 @@ aside {
 	font-style: italic;
 }
 
+figure > figcaption.centered {
+	text-align: center;
+}
+
 aside {
 	padding-left: 25px;
 	margin-left: 3%;
@@ -126,6 +144,16 @@ code {
 	font-size: 12pt;
 }
 
+blockquote {
+	background: #EBF3FF;
+	padding: 3px 25px;
+	margin: 5px 0px;
+}
+
+blockquote > pre {
+	border-left-color: #204a87;
+}
+
 pre {
 	border-left: 2px solid #ddd;
 	padding-left: 25px;
@@ -141,6 +169,11 @@ footer {
 	text-align: center;
 	color: #aaa;
 	word-spacing: 12pt;
+}
+
+footer .footnote {
+	word-spacing: 0;
+	font-size: 60%;
 }
 
 img.float-left {
@@ -180,7 +213,7 @@ table td {
 /* Pygments Highlight */
 code .hll { background-color: #ffffcc }
 code .c { color: #8f5902; font-style: italic } /* Comment */
-code .err { color: #a40000; border: 1px solid #ef2929 } /* Error */
+code .err { color: #909090; } /* Error */
 code .g { color: #000000 } /* Generic */
 code .k { color: #204a87; font-weight: bold } /* Keyword */
 code .l { color: #000000 } /* Literal */
