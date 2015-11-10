@@ -1068,11 +1068,11 @@ Whew. That was a whirlwind tour of language features and concepts, but that's ju
 
 But before we get to the app, we might do further refactoring, separating the library code from the application, likely following with eventual publication of the resulting library to *crates.io*.
 
-All current code is available on [GitHub](https://github.com/nbaksalyar/rust-chat/tree/part-1)&nbsp;&mdash;&nbsp;feel free to fork it and play with it at your own discretion.
+I suggest you to proceed to <a href="/2015/11/09/rust-in-detail-2.html">the next part</a>.
 
-I suggest you to subscribe to the blog in [RSS](http://feeds.feedburner.com/NikitaBaksalyar) or on [Twitter](https://twitter.com/nbaksalyar) if you'd like to follow the updates.
+All code for the part 1 is available on [GitHub](https://github.com/nbaksalyar/rust-chat/tree/part-1).
 
-See you soon!
+Discussions on Reddit: [#1](https://www.reddit.com/r/programming/comments/3of35e/rust_in_detail_writing_scalable_chat_service_from/), [#2](https://www.reddit.com/r/rust/comments/3oczn3/rust_in_detail_writing_scalable_chat_service_from/), [#3](https://www.reddit.com/r/rust/comments/3oczn3/rust_in_detail_writing_scalable_chat_service_from/), [#4](https://www.reddit.com/r/programming/comments/3csjza/rust_in_detail_writing_scalable_chat_service_from/).
 
 ## Resources
 
