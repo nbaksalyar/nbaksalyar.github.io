@@ -145,8 +145,8 @@ As you remember, library dependencies are managed by Cargo. It gets libraries fr
 
 At the moment of this writing `mio` has a package only for the version 0.4, while v.0.5 has some new useful features and breaking API changes, so for now let's use the bleeding edge version by adding the reference to the library to `Cargo.toml`:
 
-	[dependencies.mio]
-	git = "https://github.com/carllerche/mio"
+	[dependencies]
+	mio = { git = "https://github.com/carllerche/mio" }
 
 After we've added the dependency we need to import it in our code, so let's put it into `main.rs` as well:
 
