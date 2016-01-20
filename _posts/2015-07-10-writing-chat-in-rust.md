@@ -257,10 +257,10 @@ use mio::tcp::*;
 let address = "0.0.0.0:10000".parse::<SocketAddr>().unwrap();
 let server_socket = TcpListener::bind(&address).unwrap();
 
-event_loop.register(&server_socket,
-                    Token(0),
-                    EventSet::readable(),
-                    PollOpt::edge()).unwrap();
+event_loop.register_opt(&server_socket,
+                        Token(0),
+                        EventSet::readable(),
+                        PollOpt::edge()).unwrap();
 {% endhighlight %}
 
 And let's go over it, line by line.
@@ -291,10 +291,10 @@ Also, you might be wondering why we call `unwrap` almost on every line&nbsp;&mda
 For now we need to register the socket within the event loop:
 
 {% highlight rust %}
-event_loop.register(&server_socket,
-                    Token(0),
-                    EventSet::readable(),
-                    PollOpt::edge()).unwrap();
+event_loop.register_opt(&server_socket,
+                        Token(0),
+                        EventSet::readable(),
+                        PollOpt::edge()).unwrap();
 {% endhighlight %}
 
 Arguments for `register` are slightly more complicated:
@@ -357,7 +357,7 @@ impl Handler for WebSocketServer {
                 let new_token = Token(self.token_counter);
 
                 self.clients.insert(new_token, client_socket);
-                event_loop.register(&self.clients[&new_token],
+                event_loop.register_opt(&self.clients[&new_token],
                                         new_token, EventSet::readable(),
                                         PollOpt::edge() | PollOpt::oneshot()).unwrap();
             }
@@ -477,7 +477,7 @@ self.token_counter += 1;
 And finally we should subscribe to events from the newly accepted client's socket by registering it within the event loop, in the very same fashion as with registration of the listening server socket, but providing another token & socket this time:
 
 {% highlight rust %}
-event_loop.register(&self.clients[&new_token],
+event_loop.register_opt(&self.clients[&new_token],
                         new_token, EventSet::readable(),
                         PollOpt::edge() | PollOpt::oneshot()).unwrap();
 {% endhighlight %}
@@ -493,7 +493,7 @@ let mut server = WebSocketServer {
     socket: server_socket    // Handling the ownership of the socket to the struct
 };
 
-event_loop.register(&server.socket,
+event_loop.register_opt(&server.socket,
                         SERVER_TOKEN,
                         EventSet::readable(),
                         PollOpt::edge()).unwrap();
@@ -565,7 +565,7 @@ match token {
     SERVER_TOKEN => {
         ...
         self.clients.insert(new_token, WebSocketClient::new(client_socket));
-        event_loop.register(&self.clients[&new_token].socket, new_token, EventSet::readable(),
+        event_loop.register_opt(&self.clients[&new_token].socket, new_token, EventSet::readable(),
                                 PollOpt::edge() | PollOpt::oneshot()).unwrap();
         ...
     },
