@@ -304,7 +304,7 @@ Arguments for `register` are slightly more complicated:
 * *PollOpt* are options for the subscription. `PollOpt::edge()` means that we prefer *edge-triggered* events to *level-triggered*.  
 <br/>The difference between two can be put this way: the level-triggered subscription notifies when a socket buffer has some data available to read, while the edge-triggered notifies only when new data has arrived to a socket. I.e., in case of edge-triggered notifications, if we haven't read all data available in the socket, we won't get new notifications until some *new* data will arrive. With level-triggered events we'll be getting new notifications as long as there's some data to read in the socket's buffer. You can refer to [StackOverflow answers](http://stackoverflow.com/questions/1966863/level-vs-edge-trigger-network-event-mechanisms) to get more details.
 
-Now, if we'll run the resulting program with `cargo run`  and check the `lsof` output, we will see that it's indeed listening on the port number 10000:
+Now, if we'll run the resulting program with `cargo run` and check the `lsof` output, we will see that it's indeed listening on the port number 10000:
 
 	$ lsof -i :10000
 	COMMAND   PID        USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
