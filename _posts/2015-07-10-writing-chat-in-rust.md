@@ -257,10 +257,10 @@ use mio::tcp::*;
 let address = "0.0.0.0:10000".parse::<SocketAddr>().unwrap();
 let server_socket = TcpListener::bind(&address).unwrap();
 
-event_loop.register_opt(&server_socket,
-                        Token(0),
-                        EventSet::readable(),
-                        PollOpt::edge()).unwrap();
+event_loop.register(&server_socket,
+                    Token(0),
+                    EventSet::readable(),
+                    PollOpt::edge()).unwrap();
 {% endhighlight %}
 
 And let's go over it, line by line.
@@ -358,9 +358,9 @@ impl Handler for WebSocketServer {
                 let new_token = Token(self.token_counter);
 
                 self.clients.insert(new_token, client_socket);
-                event_loop.register_opt(&self.clients[&new_token],
-                                        new_token, EventSet::readable(),
-                                        PollOpt::edge() | PollOpt::oneshot()).unwrap();
+                event_loop.register(&self.clients[&new_token],
+                                    new_token, EventSet::readable(),
+                                    PollOpt::edge() | PollOpt::oneshot()).unwrap();
             }
         }
     }
@@ -478,9 +478,9 @@ self.token_counter += 1;
 And finally we should subscribe to events from the newly accepted client's socket by registering it within the event loop, in the very same fashion as with registration of the listening server socket, but providing another token & socket this time:
 
 {% highlight rust %}
-event_loop.register_opt(&self.clients[&new_token],
-                        new_token, EventSet::readable(),
-                        PollOpt::edge() | PollOpt::oneshot()).unwrap();
+event_loop.register(&self.clients[&new_token],
+                    new_token, EventSet::readable(),
+                    PollOpt::edge() | PollOpt::oneshot()).unwrap();
 {% endhighlight %}
 
 You might have noticed another difference in the provided arguments: there is a `PollOpt::oneshot()` option along with the familiar `PollOpt::edge()`. It tells that we want the triggered event to temporarily unregister from the event loop. It helps us make the code more simple and straightforward because in the other case we would have needed to track the current state of a particular socket&nbsp;&mdash;&nbsp;i.e., maintain flags that we can write or read now, etc. Instead, we just simply reregister the event with a desired event set whenever it has been triggered.
@@ -494,10 +494,10 @@ let mut server = WebSocketServer {
     socket: server_socket    // Handling the ownership of the socket to the struct
 };
 
-event_loop.register_opt(&server.socket,
-                        SERVER_TOKEN,
-                        EventSet::readable(),
-                        PollOpt::edge()).unwrap();
+event_loop.register(&server.socket,
+                    SERVER_TOKEN,
+                    EventSet::readable(),
+                    PollOpt::edge()).unwrap();
 
 event_loop.run(&mut server).unwrap();
 {% endhighlight %}
@@ -566,8 +566,8 @@ match token {
     SERVER_TOKEN => {
         ...
         self.clients.insert(new_token, WebSocketClient::new(client_socket));
-        event_loop.register_opt(&self.clients[&new_token].socket, new_token, EventSet::readable(),
-                                PollOpt::edge() | PollOpt::oneshot()).unwrap();
+        event_loop.register(&self.clients[&new_token].socket, new_token, EventSet::readable(),
+                            PollOpt::edge() | PollOpt::oneshot()).unwrap();
         ...
     },
     token => {
