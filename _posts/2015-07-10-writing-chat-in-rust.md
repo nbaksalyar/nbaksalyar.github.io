@@ -15,7 +15,9 @@ The objective is to learn more about practical usage of the emerging language Ru
 Let's begin the journey!
 
 <aside>
-Russian translation is available here: <a href="http://habrahabr.ru/post/268609/">Rust в деталях: пишем масштабируемый чат с нуля, часть 1</a>
+Translated versions:<br/>
+Korean (<a href="http://blog.naver.com/futurewave01/220539095123">Rust in Detail: 확장 가능한 채팅 서비스 만들기</a>, thanks to <a href="https://brunch.co.kr/@futurewave">futurewave</a>!)<br/>
+Russian (<a href="http://habrahabr.ru/post/268609/">Rust в деталях: пишем масштабируемый чат с нуля, часть 1</a>)
 </aside>
 
 <!--more-->
