@@ -403,7 +403,7 @@ impl WebSocketFrame {
 
 The first thing to notice is that now we have to add explicit *public* declarations that specify structs, variables, constants, and functions that we want to expose as a module's interface. Other modules will then import them with `use frame::{a, b, c};`.
 
-Then we introduce a pair of new structures: `WebSocketFrameHeader`, that will hold the frame header data, and `WebSocketFrame` to represent incoming and outgoing frames. The latter has an associated function `WebSocket.read` that can read a frame not only from a socket, but also from any other data source, because we're accepting an abstract [`Read`](http://doc.rust-lang.org/std/io/trait.Read.html) trait rather than `TcpStream` as a function argument. A general rule of thumb is to use interfaces/traits instead of concrete implementations. It'll come in handy when we'll be writing unit tests, and because tests is a necessary ingredient for quality code, you might want to use it wherever you can.
+Then we introduce a pair of new structures: `WebSocketFrameHeader`, that will hold the frame header data, and `WebSocketFrame` to represent incoming and outgoing frames. The latter has an associated function `WebSocketFrame.read` that can read a frame not only from a socket, but also from any other data source, because we're accepting an abstract [`Read`](http://doc.rust-lang.org/std/io/trait.Read.html) trait rather than `TcpStream` as a function argument. A general rule of thumb is to use interfaces/traits instead of concrete implementations. It'll come in handy when we'll be writing unit tests, and because tests is a necessary ingredient for quality code, you might want to use it wherever you can.
 
 ### Reading Header
 
