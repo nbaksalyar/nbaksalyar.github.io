@@ -123,9 +123,9 @@ Given a value `0x0001`, how do we actually align its two bytes in memory?
 
 <img src="/static/rust-2/endian-1.png" class="centered" />
 
-The most simple analogy would be writing a number on paper: 1234. You conventionally write the digits left-to-right (if you don't, bear with me). That's the *big-endian*, where the most significant digit goes to the left and least significant digits continue to the right.
+The most simple analogy would be writing words on paper. European languages conventionally use left-to-right writing system. That can be compared to *big-endian*, where the most significant digit goes to the left and least significant digits continue to the right: 1234.
 
-Several semitic writing systems (e.g. Hebrew and Arabic) use right-to-left writing instead, where the same number 1234 would be written as 4321. And that'd be *little-endian*, where the most significant digit is on the right.
+On the other hand, several languages, like Hebrew, Farsi, and Arabic, write words right-to-left. And so is *little-endian*, where the most significant digit is on the right.
 
 The same concept applies to bytes. The most significant byte would be the byte that contributes more to its value, the higher byte — e.g., consider we have a number <dfn title="10818 in decimal">`0x2A42`</dfn>. The most significant byte would be `0x2A`, because it's in the "higher" place, so to speak — analogous to thousands or hundreds in decimal.
 
@@ -133,7 +133,7 @@ Here's how we order it in memory:
 
 <img src="/static/rust-2/endian-2.png" class="centered" />
 
-The big-endian goes in a "natural" way: `0x2A42`, while the little-endian is reversed: `0x422A`.  
+The big-endian goes in a "natural" way, the same as we write Arabic numerals: `0x2A42`, while the little-endian is reversed: `0x422A`.  
 That's everything you need to know about this topic! Just try to remember the example with `0x0001`, where little-endian always goes as "unnatural" `0x0100`.
 
 Now here's the major thing we need to consider in application to the WebSocket protocol: all data that comes from the network is ordered in big-endian. That's the convention that's called *network byte order*. And here's another thing: x86 processors use little-endian<a name="ref1"></a><sup>[[1]](#n1)</sup>. That means we need to convert numbers from one order to another. See how it's complicated? In fact, maybe just a little bit, because the [Crates](https://crates.io) repository already has everything we need.
