@@ -17,6 +17,7 @@ Let's begin the journey!
 <aside>
 Translated versions:<br/>
 Korean (<a href="http://blog.naver.com/futurewave01/220539095123">Rust in Detail: 확장 가능한 채팅 서비스 만들기</a>, thanks to <a href="https://brunch.co.kr/@futurewave">futurewave</a>!)<br/>
+Chinese (<a href="http://markindev.github.io/2016/02/15/Rust-in-Details-Part-1/">Rust in Detail Part 1: 实现Websocket协议</a>, thanks to <a href="http://markindev.github.io/">Jingkai Mao</a>!)<br/>
 Russian (<a href="http://habrahabr.ru/post/268609/">Rust в деталях: пишем масштабируемый чат с нуля, часть 1</a>)
 </aside>
 
