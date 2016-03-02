@@ -1175,7 +1175,7 @@ That was a big step forward for us. We've reviewed several important concepts in
 
 In the third part we'll further simplify the usage of the library, discuss multithreaded event loops, and cover the basics of benchmarking and optimization. If you want to stay updated, subscribe to the blog's [RSS](http://feeds.feedburner.com/NikitaBaksalyar) or follow me on [Twitter](https://twitter.com/nbaksalyar).
 
-As always, the current code is available on [GitHub](https://github.com/nbaksalyar/rust-chat). I'd be happy to accept any pull request if you have something to add or improve.
+As always, the current code is available on [GitHub](https://github.com/nbaksalyar/rust-chat/tree/part-2). I'd be happy to accept any pull request if you have something to add or improve.
 
 Have fun & thanks for reading!
 
