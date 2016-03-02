@@ -393,8 +393,8 @@ impl WebSocketFrame {
 
     fn read_length<R: Read>(payload_len: u8, input: &mut R) -> io::Result<usize> {
         return match payload_len {
-            PAYLOAD_LEN_U64 => input.read_u64::<BigEndian>().map(|v| v as usize).map_err(|e| io::Error::from(e)),
-            PAYLOAD_LEN_U16 => input.read_u16::<BigEndian>().map(|v| v as usize).map_err(|e| io::Error::from(e)),
+            PAYLOAD_LEN_U64 => input.read_u64::<BigEndian>().map(|v| v as usize).map_err(From::from),
+            PAYLOAD_LEN_U16 => input.read_u16::<BigEndian>().map(|v| v as usize).map_err(From::from),
             _ => Ok(payload_len as usize) // payload_len < 127
         }
     }
@@ -510,8 +510,8 @@ And then write a separate function to read the payload length:
 {% highlight rust %}
 fn read_length<R: Read>(payload_len: u8, input: &mut R) -> io::Result<usize> {
     return match payload_len {
-        PAYLOAD_LEN_U64 => input.read_u64::<BigEndian>().map(|v| v as usize).map_err(|e| io::Error::from(e)),
-        PAYLOAD_LEN_U16 => input.read_u16::<BigEndian>().map(|v| v as usize).map_err(|e| io::Error::from(e)),
+        PAYLOAD_LEN_U64 => input.read_u64::<BigEndian>().map(|v| v as usize).map_err(From::from),
+        PAYLOAD_LEN_U16 => input.read_u16::<BigEndian>().map(|v| v as usize).map_err(From::from),
         _ => Ok(payload_len as usize) // payload_len < 127
     }
 }
@@ -539,7 +539,7 @@ Next, we match on the `payload_len`:
 
 {% highlight rust %}
 return match payload_len {
-    PAYLOAD_LEN_U64 => input.read_u64::<BigEndian>().map(|v| v as usize).map_err(|e| io::Error::from(e)),
+    PAYLOAD_LEN_U64 => input.read_u64::<BigEndian>().map(|v| v as usize).map_err(From::from),
     …
 }
 {% endhighlight %}
@@ -578,7 +578,7 @@ So that's how we use it in our code, reading 8 bytes in the network order:
 {% highlight rust %}
 input.read_u64::<BigEndian>()
     .map(|v| v as usize)
-    .map_err(|e| io::Error::from(e)),
+    .map_err(From::from),
 {% endhighlight %}
 
 With `map` and `map_err` we transform the result of a type `Result<u64, byteorder::Error>` to `Result<usize, io::Error>`. `map` changes the result's type and `map_err` the error's type, respectively.
