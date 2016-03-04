@@ -711,9 +711,7 @@ Bitwise *XOR* operation, `^`, is very similar to bitwise AND: it outputs `1` onl
 
 ### Wrapping Up
 
-Now that we've got every bit in place, we can add the frames handling code to the `WebSocketClient` struct:
-
-Finally, we need to add a new pattern to our `read` function:
+Now that we've got every bit in place, we can add the final frames handling code to the `WebSocketClient` struct:
 
 {% highlight rust %}
 struct WebSocketClient {
