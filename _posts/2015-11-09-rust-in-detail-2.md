@@ -714,7 +714,7 @@ Bitwise *XOR* operation, `^`, is very similar to bitwise AND: it outputs `1` onl
 Now that we've got every bit in place, we can add the final frames handling code to the `WebSocketClient` struct:
 
 {% highlight rust %}
-struct WebSocketClient {
+impl WebSocketClient {
     // … omitted code …
     fn read(&mut self) {
         match self.state {
