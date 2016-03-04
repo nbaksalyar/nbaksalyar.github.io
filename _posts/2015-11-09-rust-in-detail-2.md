@@ -883,7 +883,7 @@ struct WebSocketClient {
 And add it to the `WebSocketClient` constructor:
 
 {% highlight rust %}
-struct WebSocketClient {
+impl WebSocketClient {
     // … omitted code …
     fn new(socket: TcpStream) -> WebSocketClient {
         let headers = Rc::new(RefCell::new(HashMap::new()));
