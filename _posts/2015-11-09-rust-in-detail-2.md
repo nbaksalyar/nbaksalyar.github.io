@@ -637,7 +637,7 @@ fn read_mask<R: Read>(input: &mut R) -> io::Result<[u8; 4]> {
 And, after we've read the mask, let's read the frame payload:
 
 {% highlight rust %}
-fn read_payload<R: Read>(payload_len: usize, input: &mut R) -> IOResult<Vec<u8>> {
+fn read_payload<R: Read>(payload_len: usize, input: &mut R) -> io::Result<Vec<u8>> {
     let mut payload: Vec<u8> = Vec::with_capacity(payload_len);
     payload.extend(iter::repeat(0).take(payload_len));
     try!(input.read(&mut payload));
@@ -831,7 +831,7 @@ This way we assemble two bytes of the frame header, and put them together into a
 Our next stop is `write`, a function that writes a frame to a certain output stream (a socket or a file):
 
 {% highlight rust %}
-pub fn write<W: Write>(&self, output: &mut W) -> IOResult<()> {
+pub fn write<W: Write>(&self, output: &mut W) -> io::Result<()> {
     let hdr = Self::serialize_header(&self.header);
     try!(output.write_u16::<BigEndian>(hdr));
 
