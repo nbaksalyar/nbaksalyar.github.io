@@ -820,7 +820,7 @@ As you might have guessed, `<<` is the bit shift operation. It works exactly the
 
 <img src="/static/rust-2/or-mask.png" class="centered" />
 
-This way we assemble two bytes of the frame header, and put them together into a word (a `u16`) by using the OR operation:
+This way we assemble the frame header into a word (`u16`), shifting the first byte by 8 bits and adding the second byte by using the OR operation:
 
 {% highlight rust %}
 ((b1 as u16) << 8) | (b2 as u16)
