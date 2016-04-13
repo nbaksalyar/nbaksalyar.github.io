@@ -11,6 +11,11 @@ In this series of articles we’ll follow the process of creating a scalable, re
 
 The second part takes up where the [part one](http://nbaksalyar.github.io/2015/07/10/writing-chat-in-rust.html) left off and continues with the WebSocket protocol implementation. If you haven't read the first part yet, it's better to start there.
 
+<aside>
+Translated versions:<br/>
+Russian (<a href="https://habrahabr.ru/post/278635/">Rust в деталях, часть 2</a>)
+</aside>
+
 <!--more-->
 
 ## Table of Contents
