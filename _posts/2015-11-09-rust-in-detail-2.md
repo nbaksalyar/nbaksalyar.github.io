@@ -5,6 +5,10 @@ index_title: "Part 2: Sending and Receiving Messages"
 tags: [rustindetail, rust]
 ---
 
+<aside class="warning">
+<strong>This blog post is outdated.</strong> Please refer to the free e-book "<a href="/handbook-of-async-rust.html">Handbook of Asynchronous Rust</a>" which explores the same topics in modern Rust.
+</aside>
+
 ## Part 2: Sending and Receiving Messages
 
 In this series of articles we’ll follow the process of creating a scalable, real-time chat service — everything in excruciating detail, of course! The objective is to learn more about system APIs and the emerging language Rust on a practical (and not too contrived) example, going step by step.

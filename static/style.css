@@ -144,6 +144,16 @@ code {
 	font-size: 12pt;
 }
 
+aside.warning {
+	font-style: normal;
+	font-size: 14pt;
+	background: #fffbf2;
+	padding: 15px 25px;
+	margin: 5px 0px;
+	border-left: 4px solid #ffce5e;
+	color: black;
+}
+
 blockquote {
 	background: #EBF3FF;
 	padding: 3px 25px;
