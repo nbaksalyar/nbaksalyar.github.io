@@ -3,13 +3,18 @@ layout: default
 title: Inquiries in Software Development
 ---
 
-<img src="/static/book/cover.png" alt="Handbook of Async Rust" style="float: right; width: 400px; margin-left: 35px;" />
+# Writing High Performance Software in Rust
 
-# Handbook of Asynchronous Rust
+<p>A Rust-focused book on high-performance software, starting from the basic principles.</p>
 
-Stemming from the 2015 series of articles "Rust in Detail", this small book explores the topic of asynchronicity in Rust, a modern systems programming language.
+## Contents at a glance
 
-It is expected to be published in Q2 2019 under the free license (<a href="https://creativecommons.org/licenses/by-nc/4.0/">Creative Commons</a>). Drafts & previews will be available on this website.
+<ol>
+  <li>Introduction</li>
+  <li>I/O</li>
+  <li>Memory</li>
+  <li>Computation</li>
+</ol>
 
 <!-- Begin Mailchimp Signup Form -->
 <link href="//cdn-images.mailchimp.com/embedcode/horizontal-slim-10_7.css" rel="stylesheet" type="text/css">
@@ -30,26 +35,3 @@ It is expected to be published in Q2 2019 under the free license (<a href="https
 </form>
 </div>
 <!--End mc_embed_signup-->
-
-## Contents at a glance
-
-<ol>
-  <li>Introduction</li>
-  <li>Thinking asynchronously</li>
-  <li>Writing asynchronously</li>
-  <li>Futures
-    <ol>
-	  <li>Visualising futures</li>
-      <li>Understanding futures</li>
-      <li>Combinators</li>
-    </ol>
-  </li>
-  <li>
-    Systems level
-    <ol>
-      <li>Event loops</li>
-      <li>Epoll and Kqueue</li>
-      <li>Mio</li>
-	</ol>
-  </li>
-</ol>

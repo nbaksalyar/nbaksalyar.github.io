@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Rust in Detail, Part 2"
-index_title: "Part 2: Sending and Receiving Messages"
+index_title: "Rust in Detail, Part 2: Sending and Receiving Messages"
 tags: [rustindetail, rust]
 ---
 

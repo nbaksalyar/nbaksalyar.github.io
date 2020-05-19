@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Rust in Detail: Writing Scalable Chat Service from Scratch"
-index_title: "Part 1: Introduction. Implementing WebSocket"
+index_title: "Rust in Detail, Part 1: Introduction. Implementing WebSocket"
 tags: [rustindetail, rust]
 ---
 
