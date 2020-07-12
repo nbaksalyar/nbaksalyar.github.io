@@ -46,7 +46,7 @@ Creating a new debugger is an insurmountable task and a very long journey. But i
 
 This post outlines the initial project plan for **[Headcrab](https://github.com/nbaksalyar/headcrab)**, a Rust debugger library. I will be publishing more code and documentation in the coming weeks. If you are interested in updates, please [follow me on Twitter](https://twitter.com/nbaksalyar). Progress updates will be also published on this blog.
 
-* You can find a more detailed roadmap in the [project repository](https://github.com/nbaksalyar/headcrab/README.md).
+* You can find a more detailed roadmap in the [project repository](https://github.com/nbaksalyar/headcrab/blob/master/README.md).
 
 ## Resources and further reading
 
