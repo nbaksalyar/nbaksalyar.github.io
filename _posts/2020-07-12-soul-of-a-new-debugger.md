@@ -44,9 +44,9 @@ Overall, I believe this is a project worth building. While we're seeing a lot of
 
 Creating a new debugger is an insurmountable task and a very long journey. But it can have a modest start: if we cover only a few popular operating systems and a few simple cases first, we can quickly achieve small wins that can save us a lot of time and frustration.
 
-This post outlines the initial project plan for **[Headcrab](https://github.com/nbaksalyar/headcrab)**, a Rust debugger library. I will be publishing more code and documentation in the coming weeks. If you are interested in updates, please [follow me on Twitter](https://twitter.com/nbaksalyar). Progress updates will be also published on this blog.
+This post outlines the initial project plan for **[Headcrab](https://github.com/headcrab-rs/headcrab)**, a Rust debugger library. I will be publishing more code and documentation in the coming weeks. If you are interested in updates, please [follow me on Twitter](https://twitter.com/nbaksalyar). Progress updates will be also published on this blog.
 
-* You can find a more detailed roadmap in the [project repository](https://github.com/nbaksalyar/headcrab/blob/master/README.md).
+* You can find a more detailed roadmap in the [project repository](https://github.com/headcrab-rs/headcrab/blob/master/README.md).
 
 ## Resources and further reading
 
