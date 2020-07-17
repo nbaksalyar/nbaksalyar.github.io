@@ -61,7 +61,7 @@ Rust takes a slightly different approach &mdash; basically, a middle ground: aut
 
 The language itself is built upon the assumption that every value has exactly one *owner*. It means that there could be only one mutable variable pointing to the same memory region:
 
-{% highlight rust %}
+```rust
 let foo = vec![1, 2, 3]; 
 // We've created a new vector containing elements 1, 2, 3 and
 // bound it to the local variable `foo`.
@@ -69,7 +69,7 @@ let foo = vec![1, 2, 3];
 let bar = foo;
 // Now we've handed ownership of the object to the variable `bar`.
 // `foo` can't be accessed further, because it has no binding now.
-{% endhighlight %}
+```
 
 And, because values bind to exactly one place, resources that they hold (memory, file handles, sockets, etc.) can be automatically freed when the variable goes out of a scope (defined by code blocks within curly braces, `{` and `}`).
 
@@ -157,10 +157,10 @@ At the moment of this writing `mio` has a package only for the version 0.4, whil
 
 After we've added the dependency we need to import it in our code, so let's put it into `main.rs` as well:
 
-{% highlight rust %}
+```rust
 extern crate mio;
 use mio::*;
-{% endhighlight %}
+```
 
 Usage of `mio` is pretty simple: first, we need to create the event loop by calling `EventLoop::new()` function, and, as the bare event loop isn't useful, we need to make it aware of our chat service. To do that we should define a [*structure*](http://doc.rust-lang.org/stable/book/structs.html) with functions that should conform to a `Handler` interface.
 
@@ -168,13 +168,13 @@ Though Rust doesn't support object-oriented programming in a "traditional" way, 
 
 Here's how we define the struct:
 
-{% highlight rust %}
+```rust
 struct WebSocketServer;
-{% endhighlight %}
+```
 
 Implement the [`Handler`](https://carllerche.github.io/mio/mio/trait.Handler.html) trait for it:
 
-{% highlight rust %}
+```rust
 impl Handler for WebSocketServer {
     // Traits can have useful default implementations, so in fact the handler
     // interface requires us to provide only two things: concrete types for
@@ -184,11 +184,11 @@ impl Handler for WebSocketServer {
     type Timeout = usize;
     type Message = ();
 }
-{% endhighlight %}
+```
 
 Start the event loop:
 
-{% highlight rust %}
+```rust
 fn main() {
     let mut event_loop = EventLoop::new().unwrap();
     // Create a new instance of our handler struct:
@@ -196,7 +196,7 @@ fn main() {
     // ... and provide the event loop with a mutable reference to it:
     event_loop.run(&mut handler).unwrap();
 }
-{% endhighlight %}
+```
 
 That's our first encounter with *borrows*: notice the usage of `&mut` on the last line.
 
@@ -206,7 +206,7 @@ It tells that we're temporary moving the ownership of the value to another bindi
 
 To simplify matters, you can imagine that the borrowing works like this (in pseudocode):
 
-{% highlight rust %}
+```rust
 // Bind a value to an owner:
 let owner = value;
 
@@ -221,11 +221,11 @@ let owner = value;
     // And then return the borrowed value to the owner:
     owner = borrow;
 }
-{% endhighlight %}
+```
 
 That code is roughly equal to this:
 
-{% highlight rust %}
+```rust
 // Bind a value to an owner:
 let owner = value;
 {
@@ -239,7 +239,7 @@ let owner = value;
     // Borrowed value is automatically returned to the owner
     // when it goes out of the scope.
 }
-{% endhighlight %}
+```
 
 There could be only one *mutable borrow* of a value *per scope*. In fact, even the owner from which the value has been borrowed can't read or change it until the borrow will fall out of a scope.
 
@@ -257,7 +257,7 @@ To start a TCP server that will be accepting WebSocket connections we'll use a s
 
 Look at the code:
 
-{% highlight rust %}
+```rust
 use std::net::SocketAddr;
 use mio::tcp::*;
 ...
@@ -268,41 +268,41 @@ event_loop.register(&server_socket,
                     Token(0),
                     EventSet::readable(),
                     PollOpt::edge()).unwrap();
-{% endhighlight %}
+```
 
 And let's go over it, line by line.
 
 First we need to add TCP namespace and socket address structure imports to the top of the `main.rs` file:
 
-{% highlight rust %}
+```rust
 use mio::tcp::*;
 use std::net::SocketAddr;
-{% endhighlight %}
+```
 
 Parse the string `"0.0.0.0:10000"` to an address structure and bind the socket to it:
 
-{% highlight rust %}
+```rust
 let address = "0.0.0.0:10000".parse::<SocketAddr>().unwrap();
-{% endhighlight %}
+```
 
 Notice how the compiler infers types for us: because `TcpListener::bind` expects an argument of the type `SockAddr`, the Rust compiler can figure out the appropriate type of the `address` for itself, so we don't need to clutter the code with explicit types information.
 
 Bind the address and start listening:
 
-{% highlight rust %}
+```rust
 let server_socket = TcpListener::bind(&address).unwrap();
-{% endhighlight %}
+```
 
 Also, you might be wondering why we call `unwrap` almost on every line&nbsp;&mdash;&nbsp;we'll get to that soon.
 
 For now we need to register the socket within the event loop:
 
-{% highlight rust %}
+```rust
 event_loop.register(&server_socket,
                         Token(0),
                         EventSet::readable(),
                         PollOpt::edge()).unwrap();
-{% endhighlight %}
+```
 
 Arguments for `register` are slightly more complicated:
 
@@ -332,7 +332,7 @@ But before we start to implement HTTP, we need to properly handle client connect
 
 Here's the basic implementation:
 
-{% highlight rust %}
+```rust
 use std::collections::HashMap;
 
 struct WebSocketServer {
@@ -372,13 +372,13 @@ impl Handler for WebSocketServer {
         }
     }
 }
-{% endhighlight %}
+```
 
 There is a lot more code now, so let's look at it in more detail.
 
 First thing we need to do is to make the server struct `WebSocketServer` stateful: it needs to contain the listening socket and store connected clients.
 
-{% highlight rust %}
+```rust
 use std::collections::HashMap;
 
 struct WebSocketServer {
@@ -386,7 +386,7 @@ struct WebSocketServer {
     clients: HashMap<Token, TcpStream>,
     token_counter: usize
 }
-{% endhighlight %}
+```
 
 We're using [`HashMap`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) from the standard collections library, `std::collections`, to store client connections. As a key for the hash map we're using a unique, non-overlapping *token* that we should generate for an each connection to identify it.
 
@@ -394,42 +394,42 @@ To provide reasonable uniqueness, we'll just use a simple counter to generate ne
 
 Next, the `Handler` trait from `mio` becomes useful again:
 
-{% highlight rust %}
+```rust
 impl Handler for WebSocketServer
-{% endhighlight %}
+```
 
 Here we need to *override* a callback function `ready` within the trait implementation. Overriding means that the `Handler` trait already contains a dummy `ready` implementation (besides other default stubs for several callback functions as well). It does nothing useful, so we need to write our own version to handle events:
 
-{% highlight rust %}
+```rust
 fn ready(&mut self, event_loop: &mut EventLoop<WebSocketServer>,
          token: Token, events: EventSet)
-{% endhighlight %}
+```
 
 This function gets called each time a socket becomes available for a read or write (depending on our subscription), and we're provided with some useful info about the event through the call arguments: the event loop instance, the token linked to the event source (socket), and `events`, a set of flags that provide details about the occurred event that could be either *readable* or *writable*.
 
 The listening socket generate *readable* events when a new client arrives into the acception queue and when we're ready to connect with it. And that's what we do next, but first we need to make sure that the event has sourced from the listening socket by doing *[pattern matching](https://doc.rust-lang.org/book/match.html)* on a token:
 
-{% highlight rust %}
+```rust
 match token {
     SERVER_TOKEN => {
         ...
     }
 }
-{% endhighlight %}
+```
 
 What does it mean? Well, the `match` syntax resembles the standard *switch* construct you can find in "traditional" imperative languages, but it has a lot more power to it. While in e.g. Java `switch` can match only on numbers, strings, and enums, Rust's `match` works on ranges, multiple values, and structures as well, and more than that&nbsp;&mdash;&nbsp;it can capture values from patterns, similar to capturing groups from the regular expressions.
 
 In this case we're matching on a token to determine what socket has generated the event &mdash; and, as you remember, `Token(0)` corresponds to the listening socket on our server. In fact, we've made it a *constant* to be more descriptive:
 
-{% highlight rust %}
+```rust
 const SERVER_TOKEN: Token = Token(0);
-{% endhighlight %}
+```
 
 So the above `match` expression is equivalent to `match { Token(0) => ... }`.
 
 Now that we know that we're dealing with the server socket, we can proceed to accepting a client's connection:
 
-{% highlight rust %}
+```rust
 let client_socket = match self.socket.accept() {
     Err(e) => {
         println!("Accept error: {}", e);
@@ -438,7 +438,7 @@ let client_socket = match self.socket.accept() {
     Ok(None) => unreachable!(),
     Ok(Some((sock, addr))) => sock
 };
-{% endhighlight %}
+```
 
 Here we're doing the matching again, now over an outcome of the `accept()` function call that returns the result typed as `Result<Option<TcpStream>>`.  [`Result`](https://doc.rust-lang.org/std/result/index.html) is a special type fundamental to errors handling in Rust. It wraps around uncertain results such as errors, timeouts, etc., and we might decide what to do with them in each individual case.
 
@@ -446,55 +446,55 @@ But we don't have to&nbsp;&mdash;&nbsp;remember that strange `unwrap()` function
 
 That's an acceptable behavior in some places. However, in case of `accept()` it's not wise to use `unwrap()` because it may accidentally shut down our entire service, effectively disconnecting all users, and we don't want that. Instead, we're just logging the fact of an error and continuing the execution:
 
-{% highlight rust %}
+```rust
 Err(e) => {
     println!("Accept error: {}", e);
     return;
 },
-{% endhighlight %}
+```
 
 [`Option`](https://doc.rust-lang.org/std/option/index.html) is another similar wrapper type that simply denotes that we either have some result or we don't. If we have no result, the type has a value of `None`, and the actual result is wrapped by `Some(value)`. As you might suggest, the type itself can be compared to *null* or *None* values that can be found in many programming languages, but actually `Option` is much safer&nbsp;&mdash;&nbsp;you'll never get the very common `NullReferenceException` error unless you want to, as it works the same way as the `Result` type: when you `unwrap()` the `Option` it shuts down the process if the result is `None`.
 
 So, let's unwrap the `accept()` return value:
 
-{% highlight rust %}
+```rust
 Ok(None) => unreachable!(),
-{% endhighlight %}
+```
 
 In this case, there's simply no way for the result to be `None`&nbsp;&mdash;&nbsp;`accept()` would return such value only if we'll try to accept a connection on a non-listening socket. But as we're pretty sure that we're dealing with the server socket, it's safe to crash the program using [`unreachable!()`](https://doc.rust-lang.org/core/macro.unreachable!.html) if `accept()` has returned an unexpected value.
 
 So we're just continuing to do the matching:
 
-{% highlight rust %}
+```rust
 let client_socket = match self.socket.accept() {
     ...
     Ok(Some(sock)) => sock
 }
-{% endhighlight %}
+```
 
 That's the most interesting part. Besides matching the pattern, this line *captures* the value that's wrapped inside the `Result<Option<TcpStream>>` type. This way we can effectively unwrap the value and return it as a result of an *expression*. That means that `match` operation acts as a kind of "function"&nbsp;&mdash;&nbsp;we can return a matching result to a variable.
 
 That's what we do here, binding the unwrapped value to the `client_socket` variable. Next we're going to store it in the clients hash table, while increasing the token counter:
 
-{% highlight rust %}
+```rust
 let new_token = Token(self.token_counter);
 self.clients.insert(new_token, client_socket);
 self.token_counter += 1;
-{% endhighlight %}
+```
 
 And finally we should subscribe to events from the newly accepted client's socket by registering it within the event loop, in the very same fashion as with registration of the listening server socket, but providing another token & socket this time:
 
-{% highlight rust %}
+```rust
 event_loop.register(&self.clients[&new_token],
                     new_token, EventSet::readable(),
                     PollOpt::edge() | PollOpt::oneshot()).unwrap();
-{% endhighlight %}
+```
 
 You might have noticed another difference in the provided arguments: there is a `PollOpt::oneshot()` option along with the familiar `PollOpt::edge()`. It tells that we want the triggered event to temporarily unregister from the event loop. It helps us make the code more simple and straightforward because in the other case we would have needed to track the current state of a particular socket&nbsp;&mdash;&nbsp;i.e., maintain flags that we can write or read now, etc. Instead, we just simply reregister the event with a desired event set whenever it has been triggered.
 
 Oh, and besides that, now that we've got more detailed `WebSocketServer` struct we must modify the event loop registration code in the main function a bit. Modifications mostly concern the struct initialization and are pretty simple:
 
-{% highlight rust %}
+```rust
 let mut server = WebSocketServer {
     token_counter: 1,        // Starting the token counter from 1
     clients: HashMap::new(), // Creating an empty HashMap
@@ -507,7 +507,7 @@ event_loop.register(&server.socket,
                     PollOpt::edge()).unwrap();
 
 event_loop.run(&mut server).unwrap();
-{% endhighlight %}
+```
 
 ## 9 Parsing HTTP
 
@@ -522,7 +522,7 @@ Let's add it to the `Cargo.toml` file:
 
 We won't review the API and just proceed to parsing HTTP:
 
-{% highlight rust %}
+```rust
 extern crate http_muncher;
 use http_muncher::{Parser, ParserHandler};
 
@@ -564,11 +564,11 @@ impl WebSocketClient {
         }
     }
 }
-{% endhighlight %}
+```
 
 And we have some changes in the `WebSocketServer`'s `ready` function:
 
-{% highlight rust %}
+```rust
 match token {
     SERVER_TOKEN => {
         ...
@@ -584,61 +584,61 @@ match token {
                               PollOpt::edge() | PollOpt::oneshot()).unwrap();
     }
 }
-{% endhighlight %}
+```
 
 Now let's review the new code line-by-line again.
 
 First, we import the HTTP parser library and define a handling struct for it:
 
-{% highlight rust %}
+```rust
 extern crate http_muncher;
 use http_muncher::{Parser, ParserHandler};
 
 struct HttpParser;
 impl ParserHandler for HttpParser { }
-{% endhighlight %}
+```
 
 We need the `ParserHandler` trait because it contains callback functions, the same way as the mio's `Handler` for the `WebSocketServer`. These callbacks get called whenever the parser has some new info &mdash; HTTP headers, the request body, etc. But as for now we need only to determine whether the request asks for a WebSocket protocol upgrade, and the parser struct itself has a handy function to check that, so we'll stick to the stub callbacks implementation.
 
 There's a detail: the HTTP parser is stateful, which means that we should create a new instance of it for each new client. Considering each client will contain its own parser state, we need to create a new struct to hold it:
 
-{% highlight rust %}
+```rust
 struct WebSocketClient {
     socket: TcpStream,
     http_parser: Parser<HttpParser>
 }
-{% endhighlight %}
+```
 
 This struct will effectively replace the `HashMap<Token, TcpStream>` declaration with `HashMap<Token, WebSocketClient>`, so we've added the client's socket to the state as well.
 
 Also, we can use the same `WebSocketClient` to hold code to manage data coming from a client. It'd be too inconvenient to put all the code in the `ready` function &mdash; it would quickly become messy and unreadable. So we're just adding a separate handler that will manage each client:
 
-{% highlight rust %}
+```rust
 impl WebSocketClient {
     fn read(&mut self) {
         ...
     }
 }
-{% endhighlight %}
+```
 
 It doesn't need to take any arguments because we already have the required state in the containing struct itself.
 
 Now we can read the incoming data:
 
-{% highlight rust %}
+```rust
 loop {
     let mut buf = [0; 2048];
     match self.socket.try_read(&mut buf) {
         ...
     }
 }
-{% endhighlight %}
+```
 
 Here's what's going on: we're starting an infinite loop, allocate some buffer space to hold the data, and trying to read it to the buffer.
 
 As the `try_read` call may result in an error, we're matching the `Result` type to check for errors:
 
-{% highlight rust %}
+```rust
 match self.socket.try_read(&mut buf) {
     Err(e) => {
         println!("Error while reading socket: {:?}", e);
@@ -646,11 +646,11 @@ match self.socket.try_read(&mut buf) {
     },
     ...
 }
-{% endhighlight %}
+```
 
 Then we check if the read call has resulted in actual bytes:
 
-{% highlight rust %}
+```rust
 match self.socket.try_read(&mut buf) {
     ...
     Ok(None) =>
@@ -658,13 +658,13 @@ match self.socket.try_read(&mut buf) {
         break,
     ...
 }
-{% endhighlight %}
+```
 
 It returns `Ok(None)` in case if we've read all the data that the client has sent us. When that happens we go to wait for new events.
 
 And, finally, here's the case when the `try_read` has written bytes to the buffer:
 
-{% highlight rust %}
+```rust
 match self.socket.try_read(&mut buf) {
     ...
     Ok(Some(len)) => {
@@ -676,20 +676,20 @@ match self.socket.try_read(&mut buf) {
         }
     }
 }
-{% endhighlight %}
+```
 
 Here we're providing a slice of the data to the parser, and then check if we have a request to "upgrade" the connection (which means that a user has provided the `Connection: Upgrade` header).
 
 The final part is the `new` method to conveniently create new `WebSocketClient` instances:
 
-{% highlight rust %}
+```rust
 fn new(socket: TcpStream) -> WebSocketClient {
     WebSocketClient {
         socket: socket,
         http_parser: Parser::request(HttpParser)
     }
 }
-{% endhighlight %}
+```
 
 This is an *associated function* which is analogous to static methods in the conventional OOP systems, and this particular function can be compared to a constructor. In this function we're just creating a new instance of `WebSocketClient` struct, but in fact we can perfectly do the job without the "constructor" function&nbsp;&mdash;&nbsp;it's just a shorthand, because without it the code would quickly become repetitive. After all, the <dfn title="Don't Repeat Yourself">[DRY](https://en.wikipedia.org/wiki/Don't_repeat_yourself)</dfn> principle exists for a reason.
 
@@ -697,9 +697,9 @@ There are few more details. First, notice that we don't use an explicit `return`
 
 Second, this line deserves more elaboration:
 
-{% highlight rust %}
+```rust
 http_parser: Parser::request(HttpParser)
-{% endhighlight %}
+```
 
 Here we're creating a new instance of the `Parser` by using an associated function `Parser::request`, and we're creating and passing a new instance of the previously defined `HttpParser` struct as an argument.
 
@@ -707,7 +707,7 @@ Let's get back to the server code.
 
 To finish up, we're making changes in the server socket handler:
 
-{% highlight rust %}
+```rust
 match token {
     SERVER_TOKEN => { ... },
     token => {
@@ -717,28 +717,28 @@ match token {
                               PollOpt::edge() | PollOpt::oneshot()).unwrap();
     }
 }
-{% endhighlight %}
+```
 
 We've added a new match expression that captures all tokens besides `SERVER_TOKEN`, that is the client socket events.
 
 After we've got the token, we can borrow a mutable reference to the corresponding client struct instance from the clients hash map:
 
-{% highlight rust %}
+```rust
 let mut client = self.clients.get_mut(&token).unwrap();
-{% endhighlight %}
+```
 
 And let's call the `read` function that we've written above:
 
-{% highlight rust %}
+```rust
 client.read();
-{% endhighlight %}
+```
 
 In the end, we've got to reregister the client, because of `oneshot()`:
 
-{% highlight rust %}
+```rust
 event_loop.reregister(&client.socket, token, EventSet::readable(),
                       PollOpt::edge() | PollOpt::oneshot()).unwrap();
-{% endhighlight %}
+```
 
 As you can see, it doesn't differ much from a client registration routine; in essence, we're just calling `reregister` instead of `register`.
 
@@ -765,7 +765,7 @@ Rust doesn't have SHA-1 and base64 in the standard library, but sure it does hav
 
 The actual function to encode the key is straightforward:
 
-{% highlight rust %}
+```rust
 extern crate sha1;
 extern crate rustc_serialize;
 
@@ -782,13 +782,13 @@ fn gen_key(key: &String) -> String {
 
     return buf.to_base64(STANDARD);
 }
-{% endhighlight %}
+```
 
 We're getting a reference to the key string as an argument for the `gen_key` function, creating a new SHA-1 hash, appending the key to it, then appending the constant as required by the RFC, and return the base64-encoded string as a result.
 
 But to make use of this function we should capture the `Sec-WebSocket-Key` header first. To do that, let's get back to the HTTP parser from the previous section. As you might remember, the `ParserHandler` trait allows us to define callbacks that get called whenever we receive new headers. Now is the right time to use this feature, so let's improve the parser struct implementation:
 
-{% highlight rust %}
+```rust
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -814,7 +814,7 @@ impl ParserHandler for HttpParser {
         false
     }
 }
-{% endhighlight %}
+```
 
 The piece of code is simple, but it introduces a new important concept: *shared ownership*.
 
@@ -832,17 +832,17 @@ Fortunately, [`RefCell`](https://doc.rust-lang.org/core/cell/index.html) fixes t
 
 Let's consider this code:
 
-{% highlight rust %}
+```rust
 self.headers.borrow_mut()
     .insert(self.current_key.clone().unwrap(),
             ...
-{% endhighlight %}
+```
 
 It corresponds to `&mut` borrow with the only difference that all checks for constrained number of mutatable borrows are performed dynamically, so it's up to us to make sure that we're borrowing the value only once.
 
 Now, the actual owner of the `headers` variable would be the `WebSocketClient` struct, so let's define the according properties there and write a new constructor function:
 
-{% highlight rust %}
+```rust
 // Import the RefCell and Rc crates from the standard library
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -879,7 +879,7 @@ impl WebSocketClient {
 
     ...
 }
-{% endhighlight %}
+```
 
 Now `WebSocketClient` can get access to parsed headers, and, consequently, we can read the header that interests us most, `Sec-WebSocket-Key`. Considering we have the key from a client, the response routine boils down to just sending an HTTP string that we combine out of several parts.
 
@@ -888,14 +888,14 @@ But as we can't just send the data in the non-blocking environment, we need to s
 The solution is to switch our event set to `EventSet::writable()` when we reregister the client's socket.  
 Remember this line?
 
-{% highlight rust %}
+```rust
 event_loop.reregister(&client.socket, token, EventSet::readable(),
                       PollOpt::edge() | PollOpt::oneshot()).unwrap();
-{% endhighlight %}
+```
 
 We just need to store the set of events that interests us with the other client's state, so let's rewrite it this way:
 
-{% highlight rust %}
+```rust
 struct WebSocketClient {
     socket: TcpStream,
     http_parser: Parser<HttpParser>,
@@ -904,35 +904,35 @@ struct WebSocketClient {
     // Adding a new `interest` property:
     interest: EventSet
 }
-{% endhighlight %}
+```
 
 And, accordingly, let's  modify the "reregister" procedure:
 
-{% highlight rust %}
+```rust
 event_loop.reregister(&client.socket, token,
                       client.interest, // Providing `interest` from the client's struct
                       PollOpt::edge() | PollOpt::oneshot()).unwrap();
-{% endhighlight %}
+```
 
 The only thing left to do is to change the client's interest value at certain places.
 
 <a name="connection-states"></a>
 To make it more straightforward, let's formalize the process of tracking the connection states:
 
-{% highlight rust %}
+```rust
 #[derive(PartialEq)]
 enum ClientState {
     AwaitingHandshake,
     HandshakeResponse,
     Connected
 }
-{% endhighlight %}
+```
 
 Here we define an *enumeration* that will describe all possible states for a WebSocket client. These three are simple: first, `AwaitingHandshake` means that we're waiting for a handshake request in HTTP, `HandshakeResponse` represents the state when we're replying to the handshake (again, talking in HTTP), and, after that, `Connected` indicates that we've started to communicate using the WebSocket protocol.
 
 Let's add the client state variable to the client struct:
 
-{% highlight rust %}
+```rust
 struct WebSocketClient {
     socket: TcpStream,
     http_parser: Parser<HttpParser>,
@@ -942,11 +942,11 @@ struct WebSocketClient {
     // Add a client state:
     state: ClientState
 }
-{% endhighlight %}
+```
 
 And modify the constructor, providing the initial state and interest:
 
-{% highlight rust %}
+```rust
 impl WebSocketClient {
     fn new(socket: TcpStream) -> WebSocketClient {
         let headers = Rc::new(RefCell::new(HashMap::new()));
@@ -962,11 +962,11 @@ impl WebSocketClient {
         }
     }
 }
-{% endhighlight %}
+```
 
 Now we can actually change the state in the `read` function. Remember these lines?
 
-{% highlight rust %}
+```rust
 match self.socket.try_read(&mut buf) {
     ...
     Ok(Some(len)) => {
@@ -976,11 +976,11 @@ match self.socket.try_read(&mut buf) {
         }
     }
 }
-{% endhighlight %}
+```
 
 Finally we can replace the placeholder in the `is_upgrade()` condition block with the state change code:
 
-{% highlight rust %}
+```rust
 if self.http_parser.is_upgrade() {
     // Change the current state
     self.state = ClientState::HandshakeResponse;
@@ -991,13 +991,13 @@ if self.http_parser.is_upgrade() {
 
     break;
 }
-{% endhighlight %}
+```
 
 After we've changed our interest to `Writable`, let's add the required routines to reply to the handshake.
 
 We'll modify the `ready` function in our `WebSocketServer` handler implementation. The writing handler itself is simple, and we only need to separate incoming events.
 
-{% highlight rust %}
+```rust
 fn ready(&mut self, event_loop: &mut EventLoop<WebSocketServer>,
          token: Token, events: EventSet) {
     // Are we dealing with the read event?
@@ -1019,11 +1019,11 @@ fn ready(&mut self, event_loop: &mut EventLoop<WebSocketServer>,
                               PollOpt::edge() | PollOpt::oneshot()).unwrap();
     }
 }
-{% endhighlight %}
+```
 
 The remaining part is most simple&nbsp;&mdash;&nbsp;we need to build and send the response string:
 
-{% highlight rust %}
+```rust
 use std::fmt;
 ...
 impl WebSocketClient {
@@ -1054,17 +1054,17 @@ impl WebSocketClient {
         self.interest.insert(EventSet::readable());
     }
 }
-{% endhighlight %}
+```
 
 Let's test it by connecting to the WebSocket server from a browser. Open the dev console in your favorite web browser (press `F12`) and put this code there:
 
-{% highlight javascript %}
+```javascript
 ws = new WebSocket('ws://127.0.0.1:10000');
 
 if (ws.readyState == WebSocket.OPEN) {
     console.log('Connection is successful');
 }
-{% endhighlight %}
+```
 
 <img src="/static/rust-1/connection-success.png" class="centered shadowed" />
 

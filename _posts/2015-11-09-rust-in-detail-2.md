@@ -63,7 +63,7 @@ Each diamond on this diagram represents a single bit (a one or a zero).
 
 Remember that all this information is packed in only **2** *octets* (that is, bytes consisting of 8 bits each). Consider this value set (in JSON):
 
-{% highlight json %}
+```json
 {
   "fin"  : 1,
   "rsv1" : 0,
@@ -73,11 +73,11 @@ Remember that all this information is packed in only **2** *octets* (that is, by
   "masked" : 1,
   "payload_len": 64
 }
-{% endhighlight %}
+```
 
 All these values can also be encoded in [binary](https://en.wikipedia.org/wiki/Bit_field), as groups of bits:
 
-{% highlight json %}
+```json
 {
   "fin"  : b1,
   "rsv1" : b0,
@@ -87,7 +87,7 @@ All these values can also be encoded in [binary](https://en.wikipedia.org/wiki/B
   "masked" : b1,
   "payload_len": b1000000
 }
-{% endhighlight %}
+```
 
 Or just as a single binary number: `1.0.0.0.0010.1.1000000`, or a hexadecimal number: `0x82C0`. That's the way the frame header actually looks when we receive it from the client, so the first thing we need to do is to divide (or *unpack*) this single number into individual values.
 
@@ -156,7 +156,7 @@ Before we get to the unpacking implementation, let's do a little warm-up with a 
 
 Let's move the connection handling code to its own function by renaming the `fn read` in `WebSocketClient` to `fn read_handshake`. Let's write a completely new `read` that will be aware of connection states we previously introduced in the ["Handshake" section](/2015/07/10/writing-chat-in-rust.html#connection-states).
 
-{% highlight rust %}
+```rust
 fn read(&mut self) {
     match self.state {
         ClientState::AwaitingHandshake => {
@@ -165,7 +165,7 @@ fn read(&mut self) {
         _ => {}
     }
 }
-{% endhighlight %}
+```
 
 It's simple - we match on the current value of `self.state`, and for now we handle only `AwaitingHandshake` and a match-all case (which is required by the Rust compiler, as the patterns in `match` should be exhaustive for safety reasons).
 
@@ -173,7 +173,7 @@ And while we're at it, let's consider another interesting refactoring that Rust 
 
 So here's a neat trick: we just move the parser state to our `ClientState` enum! Look at the code:
 
-{% highlight rust %}
+```rust
 enum ClientState {
     // We've added the parser state variable straight to the enum:
     AwaitingHandshake(RefCell<Parser<HttpParser>>),
@@ -203,7 +203,7 @@ impl WebSocketClient {
         }
     }
 }
-{% endhighlight %}
+```
 
 What are the implications of this move and how is it even possible?
 
@@ -215,7 +215,7 @@ By containing the parser state within an enum we've transferred the ownership of
 
 Now that we've removed `http_parser` from the client struct, we need to modify `read` and `read_handshake` accordingly:
 
-{% highlight rust %}
+```rust
 fn read(&mut self) {
     match self.state {
         ClientState::AwaitingHandshake(_) => {
@@ -238,40 +238,40 @@ fn read_handshake(&mut self) {
        …
    }
 }
-{% endhighlight %}
+```
 
 In `read_handshake` we encounter a new expression type, [`if let`](https://doc.rust-lang.org/book/if-let.html):
 
-{% highlight rust %}
+```rust
 let is_upgrade = if let ClientState::AwaitingHandshake(ref parser_state) = self.state {
-{% endhighlight %}
+```
 
 `if let` is a simplified version of `match` that can do pattern matching & capturing only on a single pattern, which is more convenient than `match` for such cases because it doesn't requires us to enumerate all patterns or add a catch-all case.
 
 And notice the pattern we match on, particularly `ref`:
 
-{% highlight rust %}
+```rust
 ClientState::AwaitingHandshake(ref parser_state)
-{% endhighlight %}
+```
 
 We use `ref` if we want to get a reference to the contained enum value (the parser state in this case). Without `ref` it'll look like we attempt to move the ownership of the value (or implicitly clone it). There's a caveat, though: you might have noticed that we could have matched on that value beforehand, in the `read` function, e.g.:
 
-{% highlight rust %}
+```rust
 match self.state {
     ClientState::AwaitingHandshake(ref parser_state) => {
         self.read_handshake(parser_state);
     },
     …
 }
-{% endhighlight %}
+```
 
 But it would violate the borrow checker rules, and we get this error:
 
-{% highlight rust %}
+```rust
 error: cannot borrow `*self` as mutable because `self.state.0` is also borrowed as immutable
        ClientState::AwaitingHandshake(ref parser_state) => self.read_handshake(...),
                                                            ^~~~
-{% endhighlight %}
+```
 
 <img src="/static/rust-2/borrow-tree.png" class="float-right" />
 
@@ -283,7 +283,7 @@ Finally, let's implement the unpacking of a WebSocket frame header. But before t
 
 Here's a full listing of the module (there's much, but don't be afraid - we'll dissect it in a moment):
 
-{% highlight rust %}
+```rust
 use std::io;
 use std::io::Read;
 use std::error::Error;
@@ -408,7 +408,7 @@ impl WebSocketFrame {
         }
     }
 }
-{% endhighlight %}
+```
 
 The first thing to notice is that now we have to add explicit *public* declarations that specify structs, variables, constants, and functions that we want to expose as a module's interface. Other modules will then import them with `use frame::{a, b, c};`.
 
@@ -418,7 +418,7 @@ Then we introduce a pair of new structures: `WebSocketFrameHeader`, that will ho
 
 We need some point to go from, and we begin with unpacking the header bits:
 
-{% highlight rust %}
+```rust
 fn parse_header(buf: [u8; 2]) -> WebSocketFrameHeader {
     let opcode_num = ((buf >> 8) as u8) & 0x0F;
     let opcode = OpCode::from(opcode_num);
@@ -438,7 +438,7 @@ fn parse_header(buf: [u8; 2]) -> WebSocketFrameHeader {
         Err(format!("Invalid opcode: {}", opcode_num))
     }
 }
-{% endhighlight %}
+```
 
 Let's try to understand what's going on here.
 
@@ -451,9 +451,9 @@ The concept is even simpler than the bitwise `and`. It works as follows:
 
 That is, we move a certain number of bits from the left to the right, just to make it easier to use bit masks.
 
-{% highlight rust %}
+```rust
 let opcode_num = ((buf >> 8) as u8) & 0x0F;
-{% endhighlight %}
+```
 
 Here we shift the 8 most significant header bits to the right and apply the mask we've seen earlier:
 
@@ -463,24 +463,24 @@ It goes further exactly the same way, but for different parts of the header, wit
 
 Then we create an `OpCode` enum instance based on the opcode number:
 
-{% highlight rust %}
+```rust
 let opcode = OpCode::from(opcode_num);
-{% endhighlight %}
+```
 
 We should always use enums in such cases because of the type safety. It's too error-prone to rely on untyped numbers and constants, because this way it would be possible for `opcode_num` to have an undefined value.  
 Besides, we can associate enums with their opcode numbers so that they can be casted to integers:
 
-{% highlight rust %}
+```rust
 pub enum OpCode {
     TextFrame = 1,
     BinaryFrame = 2,
     …
 }
-{% endhighlight %}
+```
 
 And we use a function to cast a raw number to an according enum instance:
 
-{% highlight rust %}
+```rust
 impl OpCode {
     fn from(op: u8) -> Option<OpCode> {
         match op {
@@ -491,7 +491,7 @@ impl OpCode {
         }
     }
 }
-{% endhighlight %}
+```
 
 Notice that it's completely safe: the function returns a value of a type `Option<OpCode>`, so for undefined opcodes it'll just return a `None` value.
 
@@ -509,14 +509,14 @@ most significant bit MUST be 0) are the payload length.
 
 I.e., we should read a `u16` if `payload_len` equals `126`, and a `u64` if it's `127`. But let's not rely on these magical values and introduce a couple of constants with descriptive names:
 
-{% highlight rust %}
+```rust
 const PAYLOAD_LEN_U16: u8 = 126;
 const PAYLOAD_LEN_U64: u8 = 127;
-{% endhighlight %}
+```
 
 And then write a separate function to read the payload length:
 
-{% highlight rust %}
+```rust
 fn read_length<R: Read>(payload_len: u8, input: &mut R) -> io::Result<usize> {
     return match payload_len {
         PAYLOAD_LEN_U64 => input.read_u64::<BigEndian>().map(|v| v as usize).map_err(From::from),
@@ -524,13 +524,13 @@ fn read_length<R: Read>(payload_len: u8, input: &mut R) -> io::Result<usize> {
         _ => Ok(payload_len as usize) // payload_len < 127
     }
 }
-{% endhighlight %}
+```
 
 The code is highly condensed, so let's take it piece-by-piece. First, look at the function signature:
 
-{% highlight rust %}
+```rust
 fn read_length<R: Read>(payload_len: u8, input: &mut R) -> io::Result<usize> {
-{% endhighlight %}
+```
 
 It takes two arguments: `payload_len` (the value from the header), and an `input` that uses the type argument `R`. The `<R: Read>` part defines that parameter.
 
@@ -538,32 +538,32 @@ It takes two arguments: `payload_len` (the value from the header), and an `input
 
 And, finally, we return the result typed as `io::Result<usize>`. `io::Result` is a [*type alias*](https://doc.rust-lang.org/book/type-aliases.html) for `Result` we've used before — it's defined in the `std::io` crate as follows:
 
-{% highlight rust %}
+```rust
 type Result<T> = std::result::Result<T, io::Error>
-{% endhighlight %}
+```
 
 What you need to understand is that it's a shorthand for the basic `Result`. It specifies the error type while leaving the result type itself as a type argument, essentially in the same way as in case of functions.
 
 Next, we match on the `payload_len`:
 
-{% highlight rust %}
+```rust
 return match payload_len {
     PAYLOAD_LEN_U64 => input.read_u64::<BigEndian>().map(|v| v as usize).map_err(From::from),
     …
 }
-{% endhighlight %}
+```
 
 Here we use the `byteorder` crate we've described earlier. At the top of the module we import it like this:
 
-{% highlight rust %}
+```rust
 use byteorder::{ReadBytesExt, BigEndian};
-{% endhighlight %}
+```
 
 The `ReadBytesExt` module provides a trait that contains methods to read `u16`s, `u32`s, and `u64`s with a certain byte order. And here's a bit of magic: `ReadBytesExt` extends another trait, `Read`, effectively adding its methods to all structs that implement it. In fact, this way you can extend any trait (or structure) in Rust, adding new methods to all already existing and future structures<a name="ref2"></a><sup>[[2]](#n2)</sup>.
 
 And it's simple to use. Look how it's implemented in the [byteorder source code](https://github.com/BurntSushi/byteorder/blob/master/src/new.rs#L68-L194):
 
-{% highlight rust %}
+```rust
 /// Extends `Read` with methods for reading numbers. (For `std::io`.)
 pub trait ReadBytesExt: io::Read {
     fn read_u16<T: ByteOrder>(&mut self) -> Result<u16> {
@@ -576,7 +576,7 @@ pub trait ReadBytesExt: io::Read {
 /// All types that implement `Read` get methods defined in `ReadBytesExt`
 /// for free.
 impl<R: io::Read + ?Sized> ReadBytesExt for R {}
-{% endhighlight %}
+```
 
 The key here is the last line: it declares a type argument `R` that includes a set of all structures which has the `io::Read` trait, and implements the `ReadBytesExt` for them. Notice that the `impl` body is empty, as `ReadBytesExt` already implements all methods.
 
@@ -584,11 +584,11 @@ The byte order is specified as a type argument as well: it's determined by a typ
 
 So that's how we use it in our code, reading 8 bytes in the network order:
 
-{% highlight rust %}
+```rust
 input.read_u64::<BigEndian>()
     .map(|v| v as usize)
     .map_err(From::from),
-{% endhighlight %}
+```
 
 With `map` and `map_err` we transform the result of a type `Result<u64, byteorder::Error>` to `Result<usize, io::Error>`. `map` changes the result's type and `map_err` the error's type, respectively.
 
@@ -597,68 +597,68 @@ With `map` and `map_err` we transform the result of a type `Result<u64, byteorde
 The protocol instructs us to read the masking key after the payload length, but only if `mask` bit is set to 1.  
 The `Option` type will fit nicely here:
 
-{% highlight rust %}
+```rust
 let mask_key = if header.masked {
     let mask = try!(Self::read_mask(input));
     Some(mask)
 } else {
     None
 }
-{% endhighlight %}
+```
 
 One interesting thing here: the [`try!`](http://rustbyexample.com/std/result/try.html) macro. It's just a shorthand for a boilerplate match expression to handle errors. In this case it expands to the following code:
 
-{% highlight rust %}
+```rust
 match Self::read_mask(input) {
     Ok(val) => val,
     Err(err) => {
         return Err(From::from(err))
     }
 }
-{% endhighlight %}
+```
 
 First it checks if the returned value is not an error, and then unpacks and returns it:
 
-{% highlight rust %}
+```rust
 Ok(val) => val,
-{% endhighlight %}
+```
 
 If there is an error, it converts the error type to the type returned by the function (`io::Error` in this case):
 
-{% highlight rust %}
+```rust
 Err(err) => {
     return Err(From::from(err))
 }
-{% endhighlight %}
+```
 
 The `try!` macro is a simple and clean way to handle errors, because writing these match expressions by hand can be pretty tedious.
 
 Now let's look at the `read_mask` implementation (nothing special here — we're just reading 4 sequential bytes to an array):
 
-{% highlight rust %}
+```rust
 fn read_mask<R: Read>(input: &mut R) -> io::Result<[u8; 4]> {
     let mut buf = [0; 4];
     try!(input.read(&mut buf));
     Ok(buf)
 }
-{% endhighlight %}
+```
 
 And, after we've read the mask, let's read the frame payload:
 
-{% highlight rust %}
+```rust
 fn read_payload<R: Read>(payload_len: usize, input: &mut R) -> io::Result<Vec<u8>> {
     let mut payload: Vec<u8> = Vec::with_capacity(payload_len);
     payload.extend(iter::repeat(0).take(payload_len));
     try!(input.read(&mut payload));
     Ok(payload)
 }
-{% endhighlight %}
+```
 
 It needs some clarifications. First, we define a buffer that will hold the payload data:
 
-{% highlight rust %}
+```rust
 let mut payload: Vec<u8> = Vec::with_capacity(payload_len);
-{% endhighlight %}
+```
 
 `Vec::with_capacity` constructs a vector with some preallocated capacity. We use a vector, a dynamic array structure, because the standard way of declaring byte arrays, `[0; <len>]`, can't take a variable `<len>` and can't be expanded — these are the *static buffers*.
 
@@ -670,17 +670,17 @@ Length is a number of elements within the vector, while capacity defines how man
 
 But here's a caveat — we read data from the `Read` source as follows:
 
-{% highlight rust %}
+```rust
 try!(input.read(&mut payload));
-{% endhighlight %}
+```
 
 The `read` method doesn't know how many bytes exactly it should read, so it depends on a length of the provided buffer. And since the vector that we provide as a buffer initially contains no elements, the length will be equal to zero and the `read` call won't return anything.
 
 That's why we need a trick to fill the buffer beforehand:
 
-{% highlight rust %}
+```rust
 payload.extend(iter::repeat(0).take(payload_len));
-{% endhighlight %}
+```
 
 We just create an *iterator* that repeats a zero `payload_len` times, effectively creating a sequence `[0, 0, 0, ...payload_len]`.
 
@@ -704,13 +704,13 @@ transformed-octet-i = original-octet-i XOR masking-key-octet-j</code></pre>
 
 That's exactly what we're doing next, iterating with `iter_mut` over every byte in the buffer, and *XORing* them with the mask key:
 
-{% highlight rust %}
+```rust
 fn apply_mask(mask: [u8; 4], bytes: &mut Vec<u8>) {
     for (idx, c) in bytes.iter_mut().enumerate() {
         *c = *c ^ mask[idx % 4];
     }
 }
-{% endhighlight %}
+```
 
 [`iterate_mut()`](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.iter_mut) allows us to modify the vector data in-place, while iterating. And [`enumerate()`](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.enumerate) transforms the iterator to return actual elements with their indexes (we need it to get the corresponding byte in the mask key).
 
@@ -722,7 +722,7 @@ Bitwise *XOR* operation, `^`, is very similar to bitwise AND: it outputs `1` onl
 
 Now that we've got every bit in place, we can add the final frames handling code to the `WebSocketClient` struct:
 
-{% highlight rust %}
+```rust
 impl WebSocketClient {
     // … omitted code …
     fn read(&mut self) {
@@ -740,7 +740,7 @@ impl WebSocketClient {
         }
     }
 }
-{% endhighlight %}
+```
 
 That's all. You can run the server with `cargo run` and try to connect to it from a browser. The incoming frames will show up in the terminal:
 
@@ -755,7 +755,7 @@ It's more simple and straightforward to send frames than to read them, because i
 
 We start with an associcated function to construct an outgoing frame header from provided arguments:
 
-{% highlight rust %}
+```rust
 impl WebSocketFrameHeader {
     fn new_header(len: usize, opcode: OpCode) -> WebSocketFrameHeader {
         WebSocketFrameHeader {
@@ -777,13 +777,13 @@ impl WebSocketFrameHeader {
         }
     }
 }
-{% endhighlight %}
+```
 
 The 2 arguments are a length of the payload, and an opcode marking the type of the frame. `determine_len` is used to calculate the "special" length value from the RFC (`126` and `127` constants we've seen earlier).
 
 As you remember, there are several types of frames, for text and binary messages. For now our application uses only text, so let's add a string-to-frame converter first:
 
-{% highlight rust %}
+```rust
 impl<'a> From<&'a str> for WebSocketFrame {
     fn from(payload: &str) -> WebSocketFrame {
         WebSocketFrame {
@@ -793,7 +793,7 @@ impl<'a> From<&'a str> for WebSocketFrame {
         }
     }
 }
-{% endhighlight %}
+```
 
 It uses a special trait, `From`, that simplifies conversions between types. In this case the frames are converted from `&str`, to the complete trait signature is `From<&'a str>`.
 
@@ -803,7 +803,7 @@ By default, each borrowed value's lifetime is confined by its scope, but in seve
 
 Let's get back to our frame construction code. We got all data that we need in the structs, and now we need to put it to use by converting it into the frame bits. We add a converse operation to `parse_header` first, adding a `serialize_header` function to the `WebSocketFrame`:
 
-{% highlight rust %}
+```rust
 impl WebSocketFrame {
     // … omitted code …
     fn serialize_header(hdr: &WebSocketFrameHeader) -> u16 {
@@ -819,7 +819,7 @@ impl WebSocketFrame {
         ((b1 as u16) << 8) | (b2 as u16)
     }
 }
-{% endhighlight %}
+```
 
 As you might have guessed, `<<` is the bit shift operation. It works exactly the same way as the right shift, `>>`, only moving bits to the left:
 
@@ -831,13 +831,13 @@ As you might have guessed, `<<` is the bit shift operation. It works exactly the
 
 This way we assemble the frame header into a word (`u16`), shifting the first byte by 8 bits and adding the second byte by using the OR operation:
 
-{% highlight rust %}
+```rust
 ((b1 as u16) << 8) | (b2 as u16)
-{% endhighlight %}
+```
 
 Our next stop is `write`, a function that writes a frame to a certain output stream (a socket or a file):
 
-{% highlight rust %}
+```rust
 pub fn write<W: Write>(&self, output: &mut W) -> io::Result<()> {
     let hdr = Self::serialize_header(&self.header);
     try!(output.write_u16::<BigEndian>(hdr));
@@ -851,7 +851,7 @@ pub fn write<W: Write>(&self, output: &mut W) -> io::Result<()> {
     try!(output.write(&self.payload));
     Ok(())
 }
-{% endhighlight %}
+```
 
 We write the 2 bytes of the header, the payload length (if it's bigger than *125*), and the payload itself.
 
@@ -859,7 +859,7 @@ And that's it! We don't need to apply any masking here, because RFC specifically
 
 The only thing that remains is changes in `WebSocketClient.write` — let's add a match on a current state and move the exisiting code to another function, `write_handshake`:
 
-{% highlight rust %}
+```rust
 impl WebSocketClient {
     fn write(&mut self) {
         match self.state {
@@ -876,22 +876,22 @@ impl WebSocketClient {
         …
     }
 }
-{% endhighlight %}
+```
 
 Then we can add a case to handle `ClientState::Connected` state. It will take frames queued for sending and send them over the network. The queue itself is not required, but it's convenient, as we don't want to switch the context of the event loop from reading to writing for every single frame that we send. Let's add it to the `WebSocketClient` struct:
 
-{% highlight rust %}
+```rust
 struct WebSocketClient {
     socket: TcpStream,
     …
     // Add outgoing frames queue:
     outgoing: Vec<WebSocketFrame>
 }
-{% endhighlight %}
+```
 
 And add it to the `WebSocketClient` constructor:
 
-{% highlight rust %}
+```rust
 impl WebSocketClient {
     // … omitted code …
     fn new(socket: TcpStream) -> WebSocketClient {
@@ -903,11 +903,11 @@ impl WebSocketClient {
         }
     }
 }
-{% endhighlight %}
+```
 
 And, finally, write the frames to the socket in the `write` function:
 
-{% highlight rust %}
+```rust
 match self.state {
     ClientState::HandshakeResponse => …,
     ClientState::Connected => {
@@ -926,11 +926,11 @@ match self.state {
     },
     _ => {}
 }
-{% endhighlight %}
+```
 
 Here we iterate over the frames in the outgoing queue, send them, clear the queue, and switch the event subscription to `read`. To check if it's actually working, let's send an echo reply for every text frame that we receive. Let's modify the `read` function:
 
-{% highlight rust %}
+```rust
 fn read(&mut self) {
     match self.state {
         ClientState::AwaitingHandshake(_) => { … },
@@ -955,23 +955,23 @@ fn read(&mut self) {
         }
     }
 }
-{% endhighlight %}
+```
 
 Let's run `cargo run` and test it in the browser again. Run this code in the browser's console:
 
-{% highlight javascript %}
+```javascript
 ws = new WebSocket('ws://127.0.0.1:10000');
 
 ws.onmessage = function (event) {
     console.log('Received response: ', event.data);
 };
-{% endhighlight %}
+```
 
 And, finally, say "hi" to our server:
 
-{% highlight javascript %}
+```javascript
 ws.send('Hi');
-{% endhighlight %}
+```
 
 That's what we'll get back:
 
@@ -984,7 +984,7 @@ But we have some more tedious work to do before we get to more interesting parts
 
 Before we get to that, let's proceed with further refactoring and move the frame receiving logic in `WebSocketClient.read` to a separate function:
 
-{% highlight rust %}
+```rust
 pub fn read(&mut self) {
     match self.state {
         ClientState::AwaitingHandshake(_) => self.read_handshake();
@@ -997,11 +997,11 @@ fn read_frame(&mut self) {
     let frame = WebSocketFrame::read(&mut self.socket);
     …
 }
-{% endhighlight %}
+```
 
 For starters, let's add support for more simple control frames, ping & pong, that are used to check if a WebSocket connection is alive. We change `read_frame` to match on a frame type:
 
-{% highlight rust %}
+```rust
 fn read_frame(&mut self) {
     let frame = WebSocketFrame::read(&mut self.socket);
 
@@ -1021,13 +1021,13 @@ fn read_frame(&mut self) {
         Err(e) => println!("error while reading frame: {}", e)
     }
 }
-{% endhighlight %}
+```
 
 We use a function we've introduced earlier, `get_opcode`, to match on a frame type.
 
 Now let's add a case to handle `Ping` frames:
 
-{% highlight rust %}
+```rust
 match frame.get_opcode() {
     OpCode::TextFrame => …,
     OpCode::Ping => {
@@ -1036,11 +1036,11 @@ match frame.get_opcode() {
     }
     _ => {}
 }
-{% endhighlight %}
+```
 
 And code to construct a `Pong` frame from an incoming ping (as required by the protocol):
 
-{% highlight rust %}
+```rust
 impl WebSocketFrame {
     // … code omitted …
     pub fn pong(ping_frame: &WebSocketFrame) -> WebSocketFrame {
@@ -1052,11 +1052,11 @@ impl WebSocketFrame {
         }
     }
 }
-{% endhighlight %}
+```
 
 Now we can proceed to `Close` frames:
 
-{% highlight rust %}
+```rust
 match frame.get_opcode() {
     OpCode::TextFrame => …,
     OpCode::Ping => …,
@@ -1067,7 +1067,7 @@ match frame.get_opcode() {
     },
     _ => {}
 }
-{% endhighlight %}
+```
 
 The protocol requires us to reply with a corresponding close frame to each `ConnectionClose` request that we receive, and the reply is actually must be based on the incoming data. The protocol also specifies that a close frame can contain a body, and if there is a body, it must start with a 2-byte status code:
 
@@ -1080,7 +1080,7 @@ The protocol requires us to reply with a corresponding close frame to each `Conn
 
 The Section 7.4 defines a bunch of status codes, but we won't need them for now. Let's just add a new frame constructor, `close_from`, that takes a request and makes a response out of it:
 
-{% highlight rust %}
+```rust
 impl WebSocketFrame {
     …
     pub fn close_from(recv_frame: &WebSocketFrame) -> WebSocketFrame {
@@ -1099,11 +1099,11 @@ impl WebSocketFrame {
         }
     }
 }
-{% endhighlight %}
+```
 
 There's a last bit. When we receive a close request, we ought to close the underlying TCP connection as well. We can do it when we write the queued frames in `WebSocketClient` by changing the event subscription to `hup` as follows:
 
-{% highlight rust %}
+```rust
 impl WebSocketClient {
     fn write(&mut self) {
         match self.state {
@@ -1137,22 +1137,22 @@ impl WebSocketClient {
         }
     }
 }
-{% endhighlight %}
+```
 
 And we should add a method to check if the frame opcode is close:
 
-{% highlight rust %}
+```rust
 impl WebSocketFrame {
     // … omitted code …
     pub fn is_close(&self) -> bool {
         self.header.opcode == OpCode::ConnectionClose
     }
 }
-{% endhighlight %}
+```
 
 And the last bit is the `WebSocketServer`, where we need to remove disconnected clients from the store:
 
-{% highlight rust %}
+```rust
 impl Handler for WebSocketServer {
     // … omitted code …
     fn ready(&mut self, event_loop: &mut EventLoop<WebSocketServer>, token: Token, events: EventSet) {
@@ -1173,7 +1173,7 @@ impl Handler for WebSocketServer {
         }
     }
 }
-{% endhighlight %}
+```
 
 And for now we're done.
 
