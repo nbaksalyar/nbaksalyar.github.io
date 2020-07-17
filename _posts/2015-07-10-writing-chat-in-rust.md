@@ -6,7 +6,7 @@ tags: [rustindetail, rust]
 ---
 
 <aside class="warning">
-<strong>This blog post is outdated.</strong> Please refer to the [Tokio documentation](https://tokio.rs/docs/getting-started/hello-world/) to learn more about a modern approach to asynchronous I/O in Rust.
+<strong>This blog post is outdated.</strong> Please refer to the <a href="https://tokio.rs/docs/getting-started/hello-world/">Tokio documentation</a> to learn more about a modern approach to asynchronous I/O in Rust.
 </aside>
 
 ## Part 1: Implementing WebSocket. Introduction.
